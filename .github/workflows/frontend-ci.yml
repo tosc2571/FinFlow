@@ -1,5 +1,8 @@
 name: Frontend CI
 
+# Runs on every PR (required check for merging into main — so no path filter there)
+# and, path-filtered, on pushes to main.
+
 on:
   push:
     branches: [main]
@@ -8,12 +11,9 @@ on:
       - '.github/workflows/frontend-ci.yml'
   pull_request:
     branches: [main]
-    paths:
-      - 'frontend/**'
-      - '.github/workflows/frontend-ci.yml'
 
 jobs:
-  build-and-test:
+  frontend:
     runs-on: ubuntu-latest
     defaults:
       run:

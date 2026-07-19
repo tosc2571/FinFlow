@@ -51,6 +51,15 @@ jobs:
           (cd out/win-x64 && zip -qr "../../finflow-${GITHUB_REF_NAME}-win-x64.zip" .)
           (cd out/linux-x64 && tar czf "../../finflow-${GITHUB_REF_NAME}-linux-x64.tar.gz" .)
 
+      # Gate the release on an end-to-end smoke test of the exact artifact users will
+      # download: unpack the tar.gz and run the shared assertions against the binary.
+      # Any failed assertion fails the job — no release is created.
+      - name: Smoke test the packaged app
+        run: |
+          mkdir /tmp/smoke
+          tar xzf "finflow-${GITHUB_REF_NAME}-linux-x64.tar.gz" -C /tmp/smoke
+          bash scripts/smoke-test.sh /tmp/smoke
+
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
