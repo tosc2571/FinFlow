@@ -1,5 +1,8 @@
 name: Backend CI
 
+# Runs on every PR (required check for merging into main — so no path filter there)
+# and, path-filtered, on pushes to main.
+
 on:
   push:
     branches: [main]
@@ -9,13 +12,9 @@ on:
       - '.github/workflows/backend-ci.yml'
   pull_request:
     branches: [main]
-    paths:
-      - 'backend/**'
-      - 'FinFlow.sln'
-      - '.github/workflows/backend-ci.yml'
 
 jobs:
-  build-and-test:
+  backend:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

@@ -1,0 +1,39 @@
+name: Smoke CI
+
+# Full-stack smoke test on every PR (required for merging) and on pushes to main:
+# builds the frontend into the API's wwwroot, publishes, then runs
+# scripts/smoke-test.sh against the real running app.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Build frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npx ng build
+
+      - name: Publish app with embedded UI
+        run: |
+          cp -r frontend/dist/finflow/browser backend/FinFlow.Api/wwwroot
+          dotnet publish backend/FinFlow.Api/FinFlow.Api.csproj -c Release -o out
+
+      - name: Smoke test
+        run: bash scripts/smoke-test.sh out
