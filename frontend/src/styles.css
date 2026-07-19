@@ -1,0 +1,228 @@
+/* FinFlow global styles — plain CSS, light theme (dark mode is on the v2 backlog). */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  color: #0b0b0b;
+  background: #f9f9f7;
+}
+
+h1 {
+  font-size: 1.4rem;
+  margin: 0 0 1rem;
+}
+
+h2 {
+  font-size: 1.1rem;
+  margin: 1.5rem 0 0.75rem;
+}
+
+/* --- tables --- */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fcfcfb;
+  border: 1px solid #e1e0d9;
+}
+
+th,
+td {
+  padding: 0.45rem 0.6rem;
+  text-align: left;
+  border-bottom: 1px solid #e1e0d9;
+}
+
+th {
+  color: #52514e;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+tbody tr:hover {
+  background: #f4f4f1;
+}
+
+td.amount,
+th.amount {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.neg {
+  color: #a02020;
+}
+
+/* --- forms & controls --- */
+
+input,
+select,
+button {
+  font: inherit;
+}
+
+input,
+select {
+  padding: 0.35rem 0.5rem;
+  border: 1px solid #c3c2b7;
+  border-radius: 6px;
+  background: #fff;
+}
+
+input:focus,
+select:focus {
+  outline: 2px solid #2a78d6;
+  outline-offset: 0;
+  border-color: #2a78d6;
+}
+
+button {
+  padding: 0.4rem 0.8rem;
+  border: 1px solid #c3c2b7;
+  border-radius: 6px;
+  background: #fcfcfb;
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  background: #f0efec;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+button.primary {
+  background: #2a78d6;
+  border-color: #2a78d6;
+  color: #fff;
+}
+
+button.primary:hover:not(:disabled) {
+  background: #1c5cab;
+}
+
+button.danger {
+  color: #a02020;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.toolbar label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #52514e;
+}
+
+/* --- cards & badges --- */
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.card {
+  background: #fcfcfb;
+  border: 1px solid #e1e0d9;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+}
+
+.card .label {
+  color: #52514e;
+  font-size: 0.85rem;
+}
+
+.card .value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-top: 0.2rem;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.badge.auto {
+  background: #e7f3e7;
+  color: #006300;
+}
+
+.badge.needsreview {
+  background: #fdf3dd;
+  color: #7a5200;
+}
+
+.badge.ignored {
+  background: #f0efec;
+  color: #52514e;
+}
+
+.badge.manualoverride {
+  background: #e3edf9;
+  color: #1c5cab;
+}
+
+.badge.failed {
+  background: #fdf0f0;
+  color: #a02020;
+}
+
+.muted {
+  color: #898781;
+}
+
+.panel {
+  background: #fcfcfb;
+  border: 1px solid #e1e0d9;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+/* --- import drop zone --- */
+
+.dropzone {
+  border: 2px dashed #c3c2b7;
+  border-radius: 8px;
+  padding: 2rem;
+  text-align: center;
+  color: #52514e;
+  background: #fcfcfb;
+  margin-bottom: 1rem;
+}
+
+.dropzone.over {
+  border-color: #2a78d6;
+  background: #f2f7fd;
+}
+
+/* --- pagination --- */
+
+.pager {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.75rem;
+}

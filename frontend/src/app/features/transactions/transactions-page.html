@@ -1,0 +1,109 @@
+<h1>Transactions</h1>
+
+<div class="toolbar">
+  <label>Year <input type="number" [(ngModel)]="year" style="width: 5.5rem" /></label>
+  <label>Search <input type="text" [(ngModel)]="contains" placeholder="purpose or counterparty" /></label>
+  <label>
+    Bank
+    <select [(ngModel)]="bank">
+      <option value="">all</option>
+      <option value="dkb">dkb</option>
+      <option value="ing">ing</option>
+      <option value="hvb">hvb</option>
+      <option value="traderepublic">traderepublic</option>
+      <option value="postbank">postbank</option>
+      <option value="volksbank">volksbank</option>
+    </select>
+  </label>
+  <label>
+    Status
+    <select [(ngModel)]="status">
+      <option value="">all</option>
+      @for (s of statuses; track s) {
+        <option [value]="s">{{ statusLabels[s] }}</option>
+      }
+    </select>
+  </label>
+  <label>
+    Category
+    <select [(ngModel)]="categoryId">
+      <option value="">all</option>
+      @for (c of categories(); track c.id) {
+        <option [ngValue]="c.id">{{ c.name }}</option>
+      }
+    </select>
+  </label>
+  <label>
+    Sort
+    <select [(ngModel)]="sort">
+      <option value="date">Date ↑</option>
+      <option value="date-desc">Date ↓</option>
+      <option value="amount">Amount ↑</option>
+      <option value="amount-desc">Amount ↓</option>
+    </select>
+  </label>
+  <button class="primary" (click)="load(1)">Apply</button>
+  <button (click)="showNeedsReview()">Needs review</button>
+  <span style="flex: 1"></span>
+  <a [href]="exportUrl('xlsx')" download><button>Export XLSX</button></a>
+  <a [href]="exportUrl('csv')" download><button>Export CSV</button></a>
+</div>
+
+@if (data(); as d) {
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Bank</th>
+        <th>Counterparty</th>
+        <th>Purpose</th>
+        <th class="amount">Amount</th>
+        <th>Category</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (t of d.items; track t.id) {
+        <tr>
+          <td>{{ t.bookingDate | date: 'dd.MM.yyyy' }}</td>
+          <td>{{ t.sourceBank }}</td>
+          <td>{{ t.counterpartyName }}</td>
+          <td class="muted">{{ t.purpose }}</td>
+          <td class="amount" [class.neg]="t.amount < 0">{{ t.amount | number: '1.2-2' }} €</td>
+          <td>
+            <select [ngModel]="t.categoryId" (ngModelChange)="setCategory(t, $event === null ? '' : $event)">
+              <option [ngValue]="null">—</option>
+              @for (c of categories(); track c.id) {
+                <option [ngValue]="c.id">{{ c.name }}</option>
+              }
+            </select>
+          </td>
+          <td>
+            <span class="badge" [class]="'badge ' + t.classificationStatus.toLowerCase()">
+              {{ statusLabels[t.classificationStatus] }}
+            </span>
+          </td>
+          <td>
+            @if (t.classificationStatus !== 'Ignored') {
+              <button title="Ignore" (click)="setStatus(t, 'Ignored')">🚫</button>
+            }
+            <button class="danger" title="Delete" (click)="delete(t)">🗑</button>
+          </td>
+        </tr>
+      } @empty {
+        <tr>
+          <td colspan="8" class="muted">No transactions found — adjust the filter or import some CSV files first.</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+
+  <div class="pager">
+    <button [disabled]="d.page <= 1 || loading()" (click)="load(d.page - 1)">‹ Prev</button>
+    <span>Page {{ d.page }} / {{ totalPages() }} — {{ d.total }} transaction(s)</span>
+    <button [disabled]="d.page >= totalPages() || loading()" (click)="load(d.page + 1)">Next ›</button>
+  </div>
+} @else {
+  <p class="muted">Loading …</p>
+}

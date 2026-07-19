@@ -1,0 +1,14 @@
+Umsatzanzeige;Datei erstellt am: 31.03.2025
+;Letztes Update: aktuell
+
+Kunde;Max Mustermann
+Konto;Girokonto
+IBAN;DE99 5001 0517 0000 0000 00
+Zeitraum;01.03.2025 - 31.03.2025
+Kontosaldo;1.531,29;EUR
+
+Buchung;Valuta;Auftraggeber/Empfänger;Buchungstext;Verwendungszweck;Saldo;Währung;Betrag;Währung
+01.03.2025;01.03.2025;Wohnbau GmbH;Lastschrift;Miete Maerz 2025;681,29;EUR;-850,00;EUR
+03.03.2025;03.03.2025;Arbeitgeber AG;Gutschrift;Gehalt Februar;1.531,29;EUR;2.500,00;EUR
+15.03.2025;15.03.2025;Stadtwerke;Lastschrift;Stromabschlag Kd-Nr 4711;1.455,79;EUR;-75,50;EUR
+20.03.2025;20.03.2025;Supermarkt Mueller;Kartenzahlung;Wocheneinkauf;1.412,58;EUR;-43,21;EUR

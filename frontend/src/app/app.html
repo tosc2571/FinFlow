@@ -1,0 +1,21 @@
+<header class="topbar">
+  <span class="brand">FinFlow</span>
+  <nav>
+    <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+    <a routerLink="/transactions" routerLinkActive="active">Transactions</a>
+    <a routerLink="/import" routerLinkActive="active">Import</a>
+    <a routerLink="/rules" routerLinkActive="active">Rules</a>
+    <a routerLink="/categories" routerLinkActive="active">Categories</a>
+  </nav>
+</header>
+
+@if (notifications.message(); as message) {
+  <div class="error-banner" role="alert">
+    <span>{{ message }}</span>
+    <button type="button" (click)="notifications.clear()" aria-label="Dismiss">✕</button>
+  </div>
+}
+
+<main>
+  <router-outlet />
+</main>

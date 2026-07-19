@@ -1,0 +1,131 @@
+<h1>Import</h1>
+
+<div
+  class="dropzone"
+  [class.over]="dragOver()"
+  (dragover)="onDragOver($event)"
+  (dragleave)="dragOver.set(false)"
+  (drop)="onDrop($event)"
+>
+  <p>Drop bank CSV exports here, or</p>
+  <input type="file" multiple accept=".csv" (change)="onFilesSelected($event)" />
+  @if (analyzing()) {
+    <p class="muted">Detecting banks …</p>
+  }
+</div>
+
+@if (rows.length > 0) {
+  <div class="panel">
+    <h2>Review before import</h2>
+    <p class="muted">
+      Each file's bank was auto-detected from its header. Override the dropdown if needed — files without a
+      detection need a manual choice.
+    </p>
+    <table>
+      <thead>
+        <tr>
+          <th>File</th>
+          <th>Detected</th>
+          <th>Import as</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of rows; track row.file.name + row.file.size) {
+          <tr>
+            <td>{{ row.file.name }}</td>
+            <td>
+              @if (row.detectedBank) {
+                {{ row.detectedBank }}
+              } @else {
+                <span class="badge failed">not recognized</span>
+              }
+            </td>
+            <td>
+              <select [(ngModel)]="row.selectedBank">
+                @if (!row.detectedBank) {
+                  <option value="">— choose a bank —</option>
+                }
+                @for (bank of knownBanks(); track bank) {
+                  <option [value]="bank">{{ bank }}</option>
+                }
+              </select>
+            </td>
+            <td><button (click)="removeRow(row)">Remove</button></td>
+          </tr>
+        }
+      </tbody>
+    </table>
+    <p>
+      <button class="primary" [disabled]="!canImport || importing()" (click)="import()">
+        {{ importing() ? 'Importing …' : 'Import ' + rows.length + ' file(s)' }}
+      </button>
+    </p>
+  </div>
+}
+
+@if (results(); as res) {
+  <div class="panel">
+    <h2>Import result</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>File</th>
+          <th>Bank</th>
+          <th>Imported</th>
+          <th>Duplicates</th>
+          <th>Error</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (r of res; track r.batchId) {
+          <tr>
+            <td>{{ r.fileName }}</td>
+            <td>{{ r.bank ?? '—' }}</td>
+            <td>{{ r.imported }}</td>
+            <td>{{ r.duplicates }}</td>
+            <td class="muted">{{ r.error ?? '' }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+<h2>Import history</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Imported at</th>
+      <th>File</th>
+      <th>Bank</th>
+      <th>Transactions</th>
+      <th>Duplicates</th>
+      <th>Status</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    @for (b of batches(); track b.id) {
+      <tr>
+        <td>{{ b.importedAt | date: 'dd.MM.yyyy HH:mm' }}</td>
+        <td>{{ b.sourceFileName }}</td>
+        <td>{{ b.detectedBank }}</td>
+        <td>{{ b.transactionCount }}</td>
+        <td>{{ b.duplicateCount }}</td>
+        <td>
+          @if (b.status === 'Failed') {
+            <span class="badge failed" [title]="b.errorMessage ?? ''">Failed</span>
+          } @else {
+            <span class="badge auto">Completed</span>
+          }
+        </td>
+        <td><button class="danger" (click)="deleteBatch(b)">Roll back</button></td>
+      </tr>
+    } @empty {
+      <tr>
+        <td colspan="7" class="muted">No imports yet.</td>
+      </tr>
+    }
+  </tbody>
+</table>

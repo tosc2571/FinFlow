@@ -1,0 +1,61 @@
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  padding: 0.6rem 1.25rem;
+  background: #fcfcfb;
+  border-bottom: 1px solid #e1e0d9;
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.topbar nav {
+  display: flex;
+  gap: 1rem;
+}
+
+.topbar a {
+  color: #52514e;
+  text-decoration: none;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+}
+
+.topbar a:hover {
+  background: #f0efec;
+}
+
+.topbar a.active {
+  color: #0b0b0b;
+  font-weight: 600;
+  background: #f0efec;
+}
+
+.error-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin: 0.75rem 1.25rem 0;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d03b3b;
+  border-radius: 6px;
+  background: #fdf0f0;
+  color: #a02020;
+}
+
+.error-banner button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: inherit;
+}
+
+main {
+  padding: 1.25rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}

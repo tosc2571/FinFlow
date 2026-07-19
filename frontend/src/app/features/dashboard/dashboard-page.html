@@ -1,0 +1,69 @@
+<h1>Dashboard</h1>
+
+<div class="toolbar">
+  <label>Year <input type="number" [(ngModel)]="year" style="width: 5.5rem" /></label>
+  <button class="primary" (click)="load()">Apply</button>
+</div>
+
+@if (summary(); as s) {
+  <div class="cards">
+    <div class="card">
+      <div class="label">Income</div>
+      <div class="value">{{ s.income | number: '1.2-2' }} €</div>
+    </div>
+    <div class="card">
+      <div class="label">Expenses</div>
+      <div class="value neg">{{ s.expenses | number: '1.2-2' }} €</div>
+    </div>
+    <div class="card">
+      <div class="label">Net</div>
+      <div class="value" [class.neg]="s.net < 0">{{ s.net | number: '1.2-2' }} €</div>
+    </div>
+    <div class="card">
+      <div class="label">Transactions</div>
+      <div class="value">{{ s.transactionCount }}</div>
+    </div>
+    <div class="card">
+      <div class="label">Needs review</div>
+      <div class="value">{{ s.needsReviewCount }}</div>
+    </div>
+  </div>
+} @else {
+  <p class="muted">Loading …</p>
+}
+
+@if (trendChart(); as config) {
+  <div class="panel">
+    <h2>Monthly income vs. expenses</h2>
+    <app-chart [config]="config" />
+  </div>
+}
+
+@if (categoryChart(); as config) {
+  <div class="panel">
+    <h2>By category</h2>
+    <app-chart [config]="config" />
+    <table>
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th class="amount">Count</th>
+          <th class="amount">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of byCategory(); track row.categoryName) {
+          <tr>
+            <td>{{ row.categoryName }}</td>
+            <td class="amount">{{ row.count }}</td>
+            <td class="amount" [class.neg]="row.total < 0">{{ row.total | number: '1.2-2' }} €</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+@if (trend().length === 0 && byCategory().length === 0 && summary()) {
+  <p class="muted">No data for this year yet — import some bank CSV files first.</p>
+}

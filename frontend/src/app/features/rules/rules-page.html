@@ -1,0 +1,114 @@
+<h1>Classification rules</h1>
+
+<div class="panel">
+  <h2>{{ editingId === null ? 'New rule' : 'Edit rule #' + editingId }}</h2>
+  <div class="toolbar">
+    <label style="flex: 1">
+      Pattern (regex)
+      <input
+        type="text"
+        style="flex: 1"
+        [(ngModel)]="pattern"
+        (ngModelChange)="onPatternInput()"
+        placeholder="e.g. REWE|ALDI|LIDL"
+      />
+    </label>
+    <label>
+      Category
+      <select [(ngModel)]="categoryId">
+        <option value="">— choose —</option>
+        @for (c of categories(); track c.id) {
+          <option [ngValue]="c.id">{{ c.name }}</option>
+        }
+      </select>
+    </label>
+    <label>
+      Status
+      <select [(ngModel)]="status">
+        <option value="Auto">Auto</option>
+        <option value="NeedsReview">Needs review</option>
+        <option value="Ignore">Ignore</option>
+      </select>
+    </label>
+    <label>Priority <input type="number" [(ngModel)]="priority" style="width: 5rem" /></label>
+    <label><input type="checkbox" [(ngModel)]="isActive" /> active</label>
+    <button class="primary" [disabled]="!canSave" (click)="save()">
+      {{ editingId === null ? 'Create' : 'Save' }}
+    </button>
+    @if (editingId !== null) {
+      <button (click)="resetForm()">Cancel</button>
+    }
+  </div>
+
+  @if (testError(); as err) {
+    <p class="badge failed">{{ err }}</p>
+  }
+  @if (testResult(); as test) {
+    <p>
+      <strong>{{ test.matchCount }}</strong> existing transaction(s) match this pattern.
+    </p>
+    @if (test.sample.length > 0) {
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Counterparty</th>
+            <th>Purpose</th>
+            <th class="amount">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (m of test.sample; track m.transactionId) {
+            <tr>
+              <td>{{ m.bookingDate | date: 'dd.MM.yyyy' }}</td>
+              <td>{{ m.counterpartyName }}</td>
+              <td class="muted">{{ m.purpose }}</td>
+              <td class="amount" [class.neg]="m.amount < 0">{{ m.amount | number: '1.2-2' }} €</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  }
+</div>
+
+<div class="toolbar">
+  <button (click)="reclassify()">Re-run classification</button>
+  @if (reclassifyResult(); as r) {
+    <span class="muted">{{ r.reclassified }} reclassified, {{ r.skippedManualOverride }} manual override(s) kept.</span>
+  }
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>Priority</th>
+      <th>Pattern</th>
+      <th>Category</th>
+      <th>Status</th>
+      <th>Active</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    @for (rule of rules(); track rule.id) {
+      <tr>
+        <td>{{ rule.priority }}</td>
+        <td><code>{{ rule.pattern }}</code></td>
+        <td>{{ rule.categoryName }}</td>
+        <td>{{ rule.status }}</td>
+        <td>{{ rule.isActive ? '✓' : '—' }}</td>
+        <td>
+          <button (click)="edit(rule)">Edit</button>
+          <button class="danger" (click)="delete(rule)">Delete</button>
+        </td>
+      </tr>
+    } @empty {
+      <tr>
+        <td colspan="6" class="muted">
+          No rules yet — create one above. Imported transactions without a matching rule land in "Needs review".
+        </td>
+      </tr>
+    }
+  </tbody>
+</table>

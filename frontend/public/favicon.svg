@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- FinFlow: an "F" built from flowing bars on the brand blue. -->
+  <rect width="64" height="64" rx="14" fill="#2a78d6"/>
+  <rect x="20" y="16" width="26" height="8" rx="3" fill="#fff"/>
+  <rect x="20" y="30" width="18" height="8" rx="3" fill="#fff"/>
+  <rect x="20" y="16" width="8" height="32" rx="3" fill="#fff"/>
+</svg>
