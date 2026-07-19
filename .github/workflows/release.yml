@@ -1,0 +1,61 @@
+name: Release
+
+# Cutting a release: git tag v0.1.0 && git push origin v0.1.0
+# Builds self-contained binaries (no .NET/Node needed on the user's machine)
+# and attaches them to a GitHub release.
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Build frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npx ng build
+
+      - name: Copy frontend into API wwwroot
+        run: cp -r frontend/dist/finflow/browser backend/FinFlow.Api/wwwroot
+
+      - name: Publish win-x64
+        run: >
+          dotnet publish backend/FinFlow.Api/FinFlow.Api.csproj -c Release -r win-x64
+          --self-contained -p:PublishSingleFile=true -p:Version=${GITHUB_REF_NAME#v}
+          -o out/win-x64
+
+      - name: Publish linux-x64
+        run: >
+          dotnet publish backend/FinFlow.Api/FinFlow.Api.csproj -c Release -r linux-x64
+          --self-contained -p:PublishSingleFile=true -p:Version=${GITHUB_REF_NAME#v}
+          -o out/linux-x64
+
+      - name: Package
+        run: |
+          (cd out/win-x64 && zip -qr "../../finflow-${GITHUB_REF_NAME}-win-x64.zip" .)
+          (cd out/linux-x64 && tar czf "../../finflow-${GITHUB_REF_NAME}-linux-x64.tar.gz" .)
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >
+          gh release create "$GITHUB_REF_NAME"
+          "finflow-${GITHUB_REF_NAME}-win-x64.zip"
+          "finflow-${GITHUB_REF_NAME}-linux-x64.tar.gz"
+          --title "FinFlow $GITHUB_REF_NAME" --generate-notes

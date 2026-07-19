@@ -32,7 +32,9 @@ Supported banks: **DKB** (checking + credit card), **ING**, **HVB**, **Trade Rep
 
 No Docker needed — FinFlow runs as a single local app that serves both the UI and the API.
 
-Build once (requires [.NET 8 SDK](https://dotnet.microsoft.com/download) and [Node.js 24+](https://nodejs.org) — running the built app afterwards needs neither Node nor Docker, only the .NET runtime):
+**Easiest: download a release.** Grab the zip for your platform from the [Releases page](https://github.com/tosc2571/FinFlow/releases), unpack it, run `FinFlow.Api.exe` (Windows) or `./FinFlow.Api` (Linux), and open **http://localhost:5199**. The binaries are self-contained — no .NET, Node, or Docker required.
+
+**Or build from source** (requires [.NET 8 SDK](https://dotnet.microsoft.com/download) and [Node.js 24+](https://nodejs.org) — running the built app afterwards needs neither Node nor Docker, only the .NET runtime):
 
 ```bash
 git clone https://github.com/tosc2571/FinFlow.git
