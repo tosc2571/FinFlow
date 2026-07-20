@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using FinFlow.Api.Data;
 using FinFlow.Api.Endpoints;
 using FinFlow.Api.Services;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
 // The bank CSV parsers fall back to Windows-1252 for older exports.
@@ -10,8 +11,19 @@ Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("Default") ?? "Data Source=finflow.db"));
+// Development keeps the database next to the project (easy to inspect/delete while coding).
+// Everywhere else (the published app users actually run) it lives in a stable, OS-appropriate
+// data directory, independent of the working directory or which folder a release was unpacked
+// into — see AppDataDirectory / issue #4. ConnectionStrings:Default still wins if set (e.g. a
+// future Docker bind mount), which is also how scripts/smoke-test.sh keeps its runs isolated
+// from a real local install.
+string defaultDbPath = builder.Environment.IsDevelopment()
+    ? "finflow.db"
+    : Path.Combine(AppDataDirectory.Resolve(), "finflow.db");
+string connectionString = builder.Configuration.GetConnectionString("Default") ?? $"Data Source={defaultDbPath}";
+string resolvedDbPath = new SqliteConnectionStringBuilder(connectionString).DataSource;
+
+builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlite(connectionString));
 builder.Services.AddScoped<ClassificationService>();
 builder.Services.AddScoped<ImportService>();
 builder.Services.AddScoped<DashboardService>();
@@ -21,6 +33,9 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+app.Logger.LogInformation("Database file: {DbPath}", Path.GetFullPath(resolvedDbPath));
+DatabaseBackup.BackupIfNeeded(resolvedDbPath, app.Logger);
 
 using (IServiceScope scope = app.Services.CreateScope())
     scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.Migrate();
