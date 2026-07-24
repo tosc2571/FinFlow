@@ -32,7 +32,14 @@ Supported banks: **DKB** (checking + credit card), **ING**, **HVB**, **Trade Rep
 
 No Docker needed — FinFlow runs as a single local app that serves both the UI and the API.
 
-**Easiest: download a release.** Grab the zip for your platform from the [Releases page](https://github.com/tosc2571/FinFlow/releases), unpack it, run `FinFlow.Api.exe` (Windows) or `./FinFlow.Api` (Linux), and open **http://localhost:5199**. The binaries are self-contained — no .NET, Node, or Docker required.
+**Easiest: use the launcher.** Download just one file — [`finflow.ps1`](scripts/finflow.ps1) (Windows) or [`finflow.sh`](scripts/finflow.sh) (Linux) — and run it. It checks GitHub for the latest release, downloads and SHA256-verifies it into a local `app` folder next to itself (only on first run or when a newer version is out), then starts FinFlow and opens **http://localhost:5199**. Run it again any time: already up to date → it just starts the app; already running → it just opens the browser. No .NET, Node, or Docker required — the binaries are self-contained.
+
+<details>
+<summary>Manual install (no launcher)</summary>
+
+Grab the zip/tar.gz for your platform from the [Releases page](https://github.com/tosc2571/FinFlow/releases), unpack it, run `FinFlow.Api.exe` (Windows) or `./FinFlow.Api` (Linux), and open http://localhost:5199. Updating means repeating these steps with a newer release — the launcher does this part for you automatically.
+
+</details>
 
 **Or build from source** (requires [.NET 8 SDK](https://dotnet.microsoft.com/download) and [Node.js 24+](https://nodejs.org) — running the built app afterwards needs neither Node nor Docker, only the .NET runtime):
 
