@@ -47,7 +47,9 @@ scripts/publish.ps1
 scripts/publish.sh
 ```
 
-Then start `publish/FinFlow.Api.exe` (Windows) or `dotnet publish/FinFlow.Api.dll` and open **http://localhost:5199** — that's the whole installation. Your data lives in a single SQLite file (`finflow.db`) next to the app, created on first start.
+Then start `publish/FinFlow.Api.exe` (Windows) or `dotnet publish/FinFlow.Api.dll` and open **http://localhost:5199** — that's the whole installation.
+
+Your data lives in a single SQLite file in a stable, per-user data directory — `%APPDATA%\FinFlow\finflow.db` on Windows, `~/.local/share/finflow/finflow.db` on Linux — independent of where the app itself is installed. That means **downloading a newer release and running it from a different folder keeps your existing data**; the app also logs the exact path it's using on startup. A dated backup (`backups/finflow-<date>.db`, next to the database) is taken automatically the first time the app starts on a given day, so a bad update or accidental change is always recoverable — old backups aren't cleaned up automatically yet, so prune the `backups` folder by hand occasionally.
 
 **Typical first session:** Import → drop your bank CSVs (or try `samples/*.csv`) → Categories → create your categories → Rules → add regex rules (the live test shows what they'd match) and re-run classification → Transactions → categorize the rest via the "needs review" filter → Dashboard/Export.
 
