@@ -46,10 +46,20 @@ jobs:
           --self-contained -p:PublishSingleFile=true -p:Version=${GITHUB_REF_NAME#v}
           -o out/linux-x64
 
+      - name: Write VERSION files
+        run: |
+          echo -n "$GITHUB_REF_NAME" > out/win-x64/VERSION
+          echo -n "$GITHUB_REF_NAME" > out/linux-x64/VERSION
+
       - name: Package
         run: |
           (cd out/win-x64 && zip -qr "../../finflow-${GITHUB_REF_NAME}-win-x64.zip" .)
           (cd out/linux-x64 && tar czf "../../finflow-${GITHUB_REF_NAME}-linux-x64.tar.gz" .)
+
+      - name: Checksums
+        run: |
+          sha256sum "finflow-${GITHUB_REF_NAME}-win-x64.zip" | cut -d' ' -f1 > "finflow-${GITHUB_REF_NAME}-win-x64.zip.sha256"
+          sha256sum "finflow-${GITHUB_REF_NAME}-linux-x64.tar.gz" | cut -d' ' -f1 > "finflow-${GITHUB_REF_NAME}-linux-x64.tar.gz.sha256"
 
       # Gate the release on an end-to-end smoke test of the exact artifact users will
       # download: unpack the tar.gz and run the shared assertions against the binary.
@@ -66,5 +76,7 @@ jobs:
         run: >
           gh release create "$GITHUB_REF_NAME"
           "finflow-${GITHUB_REF_NAME}-win-x64.zip"
+          "finflow-${GITHUB_REF_NAME}-win-x64.zip.sha256"
           "finflow-${GITHUB_REF_NAME}-linux-x64.tar.gz"
+          "finflow-${GITHUB_REF_NAME}-linux-x64.tar.gz.sha256"
           --title "FinFlow $GITHUB_REF_NAME" --generate-notes
