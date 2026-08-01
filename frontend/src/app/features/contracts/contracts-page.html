@@ -1,0 +1,131 @@
+<h1>Contracts</h1>
+
+<div class="cards">
+  <div class="card">
+    <div class="label">Expected monthly income</div>
+    <div class="value">{{ monthlyIncome() | number: '1.2-2' }} €</div>
+  </div>
+  <div class="card">
+    <div class="label">Expected monthly expenses</div>
+    <div class="value neg">{{ monthlyExpenses() | number: '1.2-2' }} €</div>
+  </div>
+  <div class="card">
+    <div class="label">Net monthly</div>
+    <div class="value" [class.neg]="monthlyIncome() + monthlyExpenses() < 0">
+      {{ monthlyIncome() + monthlyExpenses() | number: '1.2-2' }} €
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <h2>{{ editingId === null ? 'New contract' : 'Edit contract #' + editingId }}</h2>
+  <div class="toolbar">
+    <label>Name <input type="text" [(ngModel)]="name" placeholder="e.g. Rent" /></label>
+    <label>Amount <input type="number" step="0.01" [(ngModel)]="nominalAmount" style="width: 7rem" /></label>
+    <label>
+      Period
+      <select [(ngModel)]="period">
+        @for (p of periods; track p) {
+          <option [value]="p">{{ periodLabels[p] }}</option>
+        }
+      </select>
+    </label>
+    <label>Anchor date <input type="date" [(ngModel)]="anchorDate" /></label>
+    <label>Counterparty pattern <input type="text" [(ngModel)]="counterpartyPattern" placeholder="regex" /></label>
+    <label>Tolerance % <input type="number" step="1" min="0" [(ngModel)]="amountTolerancePercent" style="width: 4.5rem" /></label>
+    <label>
+      Category
+      <select [(ngModel)]="categoryId">
+        <option value="">— none —</option>
+        @for (c of categories(); track c.id) {
+          <option [ngValue]="c.id">{{ c.name }}</option>
+        }
+      </select>
+    </label>
+    <label><input type="checkbox" [(ngModel)]="isActive" /> active</label>
+    <button class="primary" [disabled]="!name.trim() || !counterpartyPattern.trim() || !anchorDate" (click)="save()">
+      {{ editingId === null ? 'Create' : 'Save' }}
+    </button>
+    @if (editingId !== null) {
+      <button (click)="resetForm()">Cancel</button>
+    }
+  </div>
+  <p class="muted">
+    Amount and sign follow the transaction convention (negative = expense, positive = income). The expected amount
+    shown below is a rolling average of recent matched payments, not this nominal value — it adapts as amounts
+    fluctuate (e.g. a salary with bonuses).
+  </p>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Period</th>
+      <th class="amount">Expected</th>
+      <th class="amount">Range</th>
+      <th class="amount">Monthly equiv.</th>
+      <th>Next due</th>
+      <th>Active</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    @for (c of contracts(); track c.id) {
+      <tr>
+        <td>{{ c.name }}</td>
+        <td>{{ periodLabels[c.period] }}</td>
+        <td class="amount" [class.neg]="c.expectedAmount < 0">{{ c.expectedAmount | number: '1.2-2' }} €</td>
+        <td class="amount muted">
+          @if (c.minObserved !== null && c.maxObserved !== null) {
+            {{ c.minObserved | number: '1.2-2' }} – {{ c.maxObserved | number: '1.2-2' }} €
+          } @else {
+            —
+          }
+        </td>
+        <td class="amount" [class.neg]="c.monthlyEquivalent < 0">{{ c.monthlyEquivalent | number: '1.2-2' }} €</td>
+        <td>{{ c.nextDueDate | date: 'dd.MM.yyyy' }}</td>
+        <td>{{ c.isActive ? '✓' : '—' }}</td>
+        <td>
+          <button (click)="showDetail(c)">{{ detail()?.contract?.id === c.id ? 'Hide' : 'Details' }}</button>
+          <button (click)="edit(c)">Edit</button>
+          <button class="danger" (click)="delete(c)">Delete</button>
+        </td>
+      </tr>
+      @if (detail()?.contract?.id === c.id) {
+        <tr>
+          <td colspan="8">
+            <table>
+              <thead>
+                <tr>
+                  <th>Due date</th>
+                  <th>Status</th>
+                  <th class="amount">Expected</th>
+                  <th class="amount">Actual</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (o of detail()!.occurrences; track o.dueDate) {
+                  <tr>
+                    <td>{{ o.dueDate | date: 'dd.MM.yyyy' }}</td>
+                    <td><span [class]="occurrenceBadgeClass(o.status)">{{ occurrenceStatusLabels[o.status] }}</span></td>
+                    <td class="amount">{{ o.expectedAmount | number: '1.2-2' }} €</td>
+                    <td class="amount" [class.neg]="o.actualAmount !== null && o.actualAmount < 0">
+                      {{ o.actualAmount !== null ? (o.actualAmount | number: '1.2-2') + ' €' : '—' }}
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </td>
+        </tr>
+      }
+    } @empty {
+      <tr>
+        <td colspan="8" class="muted">
+          No contracts yet — create one above, or use "Create contract" on a transaction row.
+        </td>
+      </tr>
+    }
+  </tbody>
+</table>

@@ -10,6 +10,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Transaction> Transactions => Set<Transaction>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<ClassificationRule> ClassificationRules => Set<ClassificationRule>();
+    public DbSet<Contract> Contracts => Set<Contract>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -24,5 +25,20 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .WithMany(c => c.Children)
             .HasForeignKey(c => c.ParentCategoryId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // Two separate FK paths between Contract and Transaction — spelled out explicitly so
+        // EF doesn't have to guess which is which: linked payments (many) vs. the one
+        // transaction a contract was originally created from (no inverse collection needed).
+        modelBuilder.Entity<Contract>()
+            .HasMany(c => c.Transactions)
+            .WithOne(t => t.Contract)
+            .HasForeignKey(t => t.ContractId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<Contract>()
+            .HasOne(c => c.SourceTransaction)
+            .WithMany()
+            .HasForeignKey(c => c.SourceTransactionId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

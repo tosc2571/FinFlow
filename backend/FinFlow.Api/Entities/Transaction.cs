@@ -27,6 +27,9 @@ public class Transaction
     public Category? Category { get; set; }
     public ClassificationStatus ClassificationStatus { get; set; } = ClassificationStatus.NeedsReview;
 
+    public int? ContractId { get; set; }
+    public Contract? Contract { get; set; }
+
     /// <summary>
     /// Hash of bank + booking date + amount + counterparty + purpose, unique per transaction.
     /// Re-importing an overlapping date range must not double-count — see AppDbContext's

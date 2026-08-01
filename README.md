@@ -15,7 +15,8 @@ Supported banks: **DKB** (checking + credit card), **ING**, **HVB**, **Trade Rep
 - CSV import wizard: drop multiple files, each file's bank is auto-detected from its header, override per file where needed; duplicate bookings are skipped automatically on re-import, and every import batch can be rolled back.
 - Filterable, paged transaction list with inline category assignment (manual choices survive re-classification), a "needs review" queue, and ignore/delete actions.
 - Classification rules (regex → category → status) managed in the UI, with a live pattern test that shows matching transactions as you type, and one-click re-classification.
-- Dashboard: income/expenses/net summary, monthly trend, per-category breakdown.
+- Dashboard: income/expenses/net summary, monthly trend, per-category breakdown, and a multi-month forecast driven by your contracts.
+- Contracts: track recurring payments (rent, insurance, salary, subscriptions) by period and due date. Expected amounts are a rolling average of recent matched payments rather than a fixed value, so fluctuating income (bonuses, overtime) doesn't trigger false deviations. Missing or off-amount payments are surfaced for review, not silently ignored. Create one from scratch or from an existing transaction with one click.
 - XLSX/CSV export honoring the current filter — the XLSX is the same tax-return workbook the CLI produces.
 
 **CLI** (stateless — no database, reads CSVs fresh on every run):
@@ -58,7 +59,7 @@ Then start `publish/FinFlow.Api.exe` (Windows) or `dotnet publish/FinFlow.Api.dl
 
 Your data lives in a single SQLite file in a stable, per-user data directory — `%APPDATA%\FinFlow\finflow.db` on Windows, `~/.local/share/finflow/finflow.db` on Linux — independent of where the app itself is installed. That means **downloading a newer release and running it from a different folder keeps your existing data**; the app also logs the exact path it's using on startup. A dated backup (`backups/finflow-<date>.db`, next to the database) is taken automatically the first time the app starts on a given day, so a bad update or accidental change is always recoverable — old backups aren't cleaned up automatically yet, so prune the `backups` folder by hand occasionally.
 
-**Typical first session:** Import → drop your bank CSVs (or try `samples/*.csv`) → Categories → create your categories → Rules → add regex rules (the live test shows what they'd match) and re-run classification → Transactions → categorize the rest via the "needs review" filter → Dashboard/Export.
+**Typical first session:** Import → drop your bank CSVs (or try `samples/*.csv`) → Categories → create your categories → Rules → add regex rules (the live test shows what they'd match) and re-run classification → Transactions → categorize the rest via the "needs review" filter, and create contracts for recurring payments → Dashboard/Export.
 
 ### Development mode
 
@@ -117,9 +118,9 @@ CSV (…)   ─┘          │ filter/export      │        └─ FinFlow.Api
 |---|---|
 | `backend/FinFlow.Core` | Parsers, classifier, filter, XLSX/CSV export — plain class library, no CLI/ASP.NET/EF references |
 | `backend/FinFlow.Cli` | Thin, stateless CLI entry point (`Program.cs` + `rules.example.json`) |
-| `backend/FinFlow.Api` | REST API: EF Core + SQLite persistence, import pipeline (parse → dedupe → classify → persist), rules/categories/dashboard/export endpoints, Swagger in dev |
-| `backend/FinFlow.Tests` | xUnit tests for parsers, data layer, import pipeline, filters, dashboard aggregates |
-| `frontend/` | Angular 21 SPA (standalone components, zoneless) — import wizard, transactions, rules, categories, dashboard; dev server proxies `/api` to the backend |
+| `backend/FinFlow.Api` | REST API: EF Core + SQLite persistence, import pipeline (parse → dedupe → classify → persist), rules/categories/contracts/dashboard/export endpoints, Swagger in dev |
+| `backend/FinFlow.Tests` | xUnit tests for parsers, data layer, import pipeline, filters, dashboard aggregates, contract matching/forecast |
+| `frontend/` | Angular 21 SPA (standalone components, zoneless) — import wizard, transactions, rules, categories, contracts, dashboard; dev server proxies `/api` to the backend |
 
 CI runs per area via path filters: `.github/workflows/backend-ci.yml` (`dotnet build` + `dotnet test`) and `frontend-ci.yml` (`ng build` + `ng test`).
 

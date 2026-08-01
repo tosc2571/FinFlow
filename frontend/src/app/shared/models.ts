@@ -3,6 +3,8 @@
 export type ClassificationStatus = 'Auto' | 'NeedsReview' | 'Ignored' | 'ManualOverride';
 export type RuleStatus = 'Auto' | 'NeedsReview' | 'Ignore';
 export type ImportStatus = 'Completed' | 'Failed';
+export type ContractPeriod = 'Monthly' | 'Quarterly' | 'SemiAnnually' | 'Annually';
+export type OccurrenceStatus = 'Matched' | 'AmountDeviation' | 'Missing' | 'Upcoming';
 
 export interface TransactionDto {
   id: number;
@@ -21,6 +23,7 @@ export interface TransactionDto {
   categoryName: string | null;
   classificationStatus: ClassificationStatus;
   importBatchId: number;
+  contractId: number | null;
 }
 
 export interface PagedTransactions {
@@ -141,4 +144,58 @@ export const STATUS_LABELS: Record<ClassificationStatus, string> = {
   NeedsReview: 'Needs review',
   Ignored: 'Ignored',
   ManualOverride: 'Manual',
+};
+
+export interface ContractDto {
+  id: number;
+  name: string;
+  nominalAmount: number;
+  expectedAmount: number;
+  minObserved: number | null;
+  maxObserved: number | null;
+  period: ContractPeriod;
+  anchorDate: string;
+  nextDueDate: string;
+  counterpartyPattern: string;
+  amountTolerance: number;
+  categoryId: number | null;
+  categoryName: string | null;
+  isActive: boolean;
+  monthlyEquivalent: number;
+}
+
+export interface ContractOccurrence {
+  dueDate: string;
+  status: OccurrenceStatus;
+  transactionId: number | null;
+  actualAmount: number | null;
+  expectedAmount: number;
+}
+
+export interface ContractDetail {
+  contract: ContractDto;
+  occurrences: ContractOccurrence[];
+}
+
+export interface MonthForecast {
+  year: number;
+  month: number;
+  expectedIncome: number;
+  expectedExpenses: number;
+  net: number;
+  dueContracts: ContractDto[];
+}
+
+export const OCCURRENCE_STATUS_LABELS: Record<OccurrenceStatus, string> = {
+  Matched: 'Matched',
+  AmountDeviation: 'Amount deviation',
+  Missing: 'Missing',
+  Upcoming: 'Upcoming',
+};
+
+export const PERIOD_LABELS: Record<ContractPeriod, string> = {
+  Monthly: 'Monthly',
+  Quarterly: 'Quarterly',
+  SemiAnnually: 'Semi-annually',
+  Annually: 'Annually',
 };
