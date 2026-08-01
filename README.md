@@ -73,19 +73,41 @@ Or manually: `dotnet run --project backend/FinFlow.Api` in one terminal, `cd fro
 
 ### Docker
 
-An alternative to the launcher/manual-install paths above — useful for self-hosting on a NAS or any machine you'd rather not install .NET/Node on directly:
+An alternative to the launcher/manual-install paths above — useful for self-hosting on a NAS or any machine you'd rather not install .NET/Node on directly. No repo clone or local build needed — a ready-built image is published to GHCR on every release:
+
+```bash
+curl -O https://raw.githubusercontent.com/tosc2571/FinFlow/main/docker-compose.yml
+curl -O https://raw.githubusercontent.com/tosc2571/FinFlow/main/.env.example
+cp .env.example .env    # edit FINFLOW_PORT / FINFLOW_DATA_LOCATION / FINFLOW_VERSION if needed
+
+docker compose pull
+docker compose up -d
+```
+
+Open **http://localhost:5199**. The database (plus its daily backup and `settings.json`) lives in a plain host folder — `./data` next to `docker-compose.yml` by default, or wherever `FINFLOW_DATA_LOCATION` in `.env` points — so it's easy to find, back up, or point your NAS's own backup tooling at, and it survives `docker compose down`/image updates regardless.
+
+Updating means pulling the newer image and recreating the container — your data folder is untouched:
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
+Everything configurable lives in `.env`, never in `docker-compose.yml` or inside the image — that's the **only** place you change the exposed port, the data location, or which release to run (`latest` tracks newest; pin it to `v0.3.0`-style tags to control upgrades yourself).
+
+> **No authentication.** Same caveat as every other install path (see [Legal notes](#legal-notes)) — don't expose the container directly to the internet; put it behind a VPN or an authenticated reverse proxy.
+
+<details>
+<summary>Building the image yourself instead of pulling from GHCR</summary>
 
 ```bash
 git clone https://github.com/tosc2571/FinFlow.git
 cd FinFlow
-docker compose up -d --build
+cp .env.example .env
+docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
 ```
 
-Open **http://localhost:5199**. The database (and its daily backup + `settings.json`) lives in the `finflow-data` named volume declared in [`docker-compose.yml`](docker-compose.yml), so it survives `docker compose down`/rebuilds — only `docker compose down -v` removes it.
-
-To run on a different port, set `FINFLOW_PORT` instead of editing any file inside the image or container: `FINFLOW_PORT=8080 docker compose up -d --build`. That's the **only** place the exposed port is configured — the container itself always listens on a fixed internal port.
-
-> **No authentication.** Same caveat as every other install path (see [Legal notes](#legal-notes)) — don't expose the container directly to the internet; put it behind a VPN or an authenticated reverse proxy.
+</details>
 
 ---
 

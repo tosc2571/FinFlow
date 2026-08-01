@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: write
+  packages: write
 
 jobs:
   release:
@@ -80,3 +81,23 @@ jobs:
           "finflow-${GITHUB_REF_NAME}-linux-x64.tar.gz"
           "finflow-${GITHUB_REF_NAME}-linux-x64.tar.gz.sha256"
           --title "FinFlow $GITHUB_REF_NAME" --generate-notes
+
+  docker:
+    # Only publish an image once the binaries it's built alongside are smoke-tested and
+    # actually released — a failed release job must not leave a stray image on GHCR.
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/tosc2571/finflow:${{ github.ref_name }}
+            ghcr.io/tosc2571/finflow:latest

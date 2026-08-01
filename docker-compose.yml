@@ -1,18 +1,18 @@
 # Example self-hosting setup (e.g. on a NAS). No authentication — see the README's Docker
 # section before exposing this beyond your own network.
 #
-# The externally-exposed port is the ONLY thing you should change to run on a different port;
-# either edit the left side of the mapping below, or set FINFLOW_PORT before starting:
-#   FINFLOW_PORT=8080 docker compose up -d
+# Configure via a .env file next to this one — copy .env.example to .env and edit it there.
+# Do not edit the values below directly; FINFLOW_PORT/FINFLOW_DATA_LOCATION/FINFLOW_VERSION
+# all come from .env so an update never means re-editing this file.
 
 services:
   finflow:
-    build: .
+    container_name: finflow
+    image: ghcr.io/tosc2571/finflow:${FINFLOW_VERSION:-latest}
     ports:
       - "${FINFLOW_PORT:-5199}:5199"
     volumes:
-      - finflow-data:/data
+      # Do not edit the next line. If you want to change where FinFlow stores its data,
+      # edit the value of FINFLOW_DATA_LOCATION in the .env file instead.
+      - ${FINFLOW_DATA_LOCATION:-./data}:/data
     restart: unless-stopped
-
-volumes:
-  finflow-data:
