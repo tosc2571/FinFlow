@@ -1,6 +1,6 @@
 ---
 name: git-workflow
-description: Use for any commit, push, pull-request, or GitHub issue work in FinFlow. main is protected — no direct pushes for anyone, admins included; every change reaches main via a pull request with passing backend/frontend/smoke checks. Encodes branching, commit style, the pre-push privacy check, GitHub issue conventions, and the recovery steps when commits accidentally land on local main.
+description: Use for any commit, push, pull-request, or GitHub issue work in FinFlow. main is protected — no direct pushes for anyone, admins included; every change reaches main via a pull request with passing backend/frontend/smoke/docker checks. Encodes branching, commit style, the pre-push privacy check, GitHub issue conventions, and the recovery steps when commits accidentally land on local main.
 ---
 
 # Git workflow (protected `main`)
@@ -9,8 +9,8 @@ Branch protection on `main` (set via `gh api`, applies to admins too):
 
 - Direct pushes are rejected; force pushes and branch deletion are blocked.
 - Pull requests are required (0 approvals — solo maintainer), with required
-  status checks `backend`, `frontend`, and `smoke`, and the branch must be
-  up to date with `main` (`strict: true`).
+  status checks `backend`, `frontend`, `smoke`, and `docker`, and the branch
+  must be up to date with `main` (`strict: true`).
 
 ## Normal flow
 
@@ -29,7 +29,7 @@ Branch protection on `main` (set via `gh api`, applies to admins too):
 4. `git push -u origin feat/<topic>`
 5. `gh pr create` — English title and body summarizing the change; the body
    ends with the Claude Code attribution line from the harness guidelines.
-6. Wait for `backend`, `frontend`, and `smoke` to pass, then merge
+6. Wait for `backend`, `frontend`, `smoke`, and `docker` to pass, then merge
    (`gh pr merge --merge`) and delete the branch.
 
 ## GitHub issues
