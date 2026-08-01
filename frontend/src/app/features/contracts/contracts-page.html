@@ -57,6 +57,7 @@
   </p>
 </div>
 
+<div class="table-scroll">
 <table>
   <thead>
     <tr>
@@ -95,6 +96,7 @@
       @if (detail()?.contract?.id === c.id) {
         <tr>
           <td colspan="8">
+            <div class="table-scroll">
             <table>
               <thead>
                 <tr>
@@ -117,6 +119,7 @@
                 }
               </tbody>
             </table>
+            </div>
           </td>
         </tr>
       }
@@ -129,3 +132,4 @@
     }
   </tbody>
 </table>
+</div>

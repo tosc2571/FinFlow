@@ -50,6 +50,7 @@
 </div>
 
 @if (data(); as d) {
+  <div class="table-scroll">
   <table>
     <thead>
       <tr>
@@ -101,6 +102,7 @@
       }
     </tbody>
   </table>
+  </div>
 
   <div class="pager">
     <button [disabled]="d.page <= 1 || loading()" (click)="load(d.page - 1)">‹ Prev</button>

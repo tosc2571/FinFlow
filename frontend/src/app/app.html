@@ -1,13 +1,16 @@
 <header class="topbar">
   <span class="brand">FinFlow</span>
-  <nav>
-    <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
-    <a routerLink="/transactions" routerLinkActive="active">Transactions</a>
-    <a routerLink="/contracts" routerLinkActive="active">Contracts</a>
-    <a routerLink="/import" routerLinkActive="active">Import</a>
-    <a routerLink="/rules" routerLinkActive="active">Rules</a>
-    <a routerLink="/categories" routerLinkActive="active">Categories</a>
-    <a routerLink="/settings" routerLinkActive="active">Settings</a>
+  <button type="button" class="nav-toggle" (click)="toggleNav()" [attr.aria-expanded]="navOpen()" aria-label="Toggle navigation">
+    ☰
+  </button>
+  <nav [class.open]="navOpen()">
+    <a routerLink="/dashboard" routerLinkActive="active" (click)="closeNav()">Dashboard</a>
+    <a routerLink="/transactions" routerLinkActive="active" (click)="closeNav()">Transactions</a>
+    <a routerLink="/contracts" routerLinkActive="active" (click)="closeNav()">Contracts</a>
+    <a routerLink="/import" routerLinkActive="active" (click)="closeNav()">Import</a>
+    <a routerLink="/rules" routerLinkActive="active" (click)="closeNav()">Rules</a>
+    <a routerLink="/categories" routerLinkActive="active" (click)="closeNav()">Categories</a>
+    <a routerLink="/settings" routerLinkActive="active" (click)="closeNav()">Settings</a>
   </nav>
 </header>
 

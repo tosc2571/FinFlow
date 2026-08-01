@@ -24,6 +24,12 @@ h2 {
 
 /* --- tables --- */
 
+/* Every <table> is wrapped in this on the page — only the table scrolls
+   horizontally on narrow screens, never the whole page. */
+.table-scroll {
+  overflow-x: auto;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;

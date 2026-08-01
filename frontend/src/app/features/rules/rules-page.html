@@ -48,6 +48,7 @@
       <strong>{{ test.matchCount }}</strong> existing transaction(s) match this pattern.
     </p>
     @if (test.sample.length > 0) {
+      <div class="table-scroll">
       <table>
         <thead>
           <tr>
@@ -68,6 +69,7 @@
           }
         </tbody>
       </table>
+      </div>
     }
   }
 </div>
@@ -79,6 +81,7 @@
   }
 </div>
 
+<div class="table-scroll">
 <table>
   <thead>
     <tr>
@@ -112,3 +115,4 @@
     }
   </tbody>
 </table>
+</div>

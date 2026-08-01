@@ -21,6 +21,7 @@
       Each file's bank was auto-detected from its header. Override the dropdown if needed — files without a
       detection need a manual choice.
     </p>
+    <div class="table-scroll">
     <table>
       <thead>
         <tr>
@@ -56,6 +57,7 @@
         }
       </tbody>
     </table>
+    </div>
     <p>
       <button class="primary" [disabled]="!canImport || importing()" (click)="import()">
         {{ importing() ? 'Importing …' : 'Import ' + rows.length + ' file(s)' }}
@@ -67,6 +69,7 @@
 @if (results(); as res) {
   <div class="panel">
     <h2>Import result</h2>
+    <div class="table-scroll">
     <table>
       <thead>
         <tr>
@@ -89,10 +92,12 @@
         }
       </tbody>
     </table>
+    </div>
   </div>
 }
 
 <h2>Import history</h2>
+<div class="table-scroll">
 <table>
   <thead>
     <tr>
@@ -129,3 +134,4 @@
     }
   </tbody>
 </table>
+</div>
