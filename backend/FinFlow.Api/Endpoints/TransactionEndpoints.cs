@@ -11,7 +11,7 @@ public static class TransactionEndpoints
         int Id, string SourceBank, DateOnly? BookingDate, DateOnly? ValueDate, decimal Amount, string Currency,
         string? CounterpartyName, string? CounterpartyIban, string? CounterpartyBic, string? Purpose,
         string? BookingType, decimal? Balance, int? CategoryId, string? CategoryName,
-        ClassificationStatus ClassificationStatus, int ImportBatchId);
+        ClassificationStatus ClassificationStatus, int ImportBatchId, int? ContractId);
 
     // categoryId null clears the category; without an explicit status, a set category
     // becomes ManualOverride (survives reclassification), a cleared one NeedsReview.
@@ -90,5 +90,5 @@ public static class TransactionEndpoints
             t.Id, t.SourceBank, t.BookingDate, t.ValueDate, t.Amount, t.Currency,
             t.CounterpartyName, t.CounterpartyIban, t.CounterpartyBic, t.Purpose,
             t.BookingType, t.Balance, t.CategoryId, t.Category != null ? t.Category.Name : null,
-            t.ClassificationStatus, t.ImportBatchId);
+            t.ClassificationStatus, t.ImportBatchId, t.ContractId);
 }

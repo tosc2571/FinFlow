@@ -7,9 +7,13 @@ import {
   CategoryBreakdown,
   CategoryDto,
   ClassificationStatus,
+  ContractDetail,
+  ContractDto,
+  ContractPeriod,
   DashboardSummary,
   ImportBatchDto,
   ImportFileResult,
+  MonthForecast,
   MonthlyTrend,
   PagedTransactions,
   PatternTestResult,
@@ -31,6 +35,17 @@ export interface RuleRequest {
   categoryId: number;
   status: RuleStatus;
   priority: number;
+  isActive: boolean;
+}
+
+export interface ContractRequest {
+  name: string;
+  nominalAmount: number;
+  period: ContractPeriod;
+  anchorDate: string;
+  counterpartyPattern: string;
+  amountTolerance: number;
+  categoryId: number | null;
   isActive: boolean;
 }
 
@@ -144,6 +159,36 @@ export class ApiService {
 
   getTrend(filter: TransactionFilter): Observable<MonthlyTrend[]> {
     return this.http.get<MonthlyTrend[]>('/api/dashboard/trend', { params: this.toParams(filter, {}) });
+  }
+
+  // --- contracts ---
+
+  getContracts(): Observable<ContractDto[]> {
+    return this.http.get<ContractDto[]>('/api/contracts/');
+  }
+
+  getContract(id: number): Observable<ContractDetail> {
+    return this.http.get<ContractDetail>(`/api/contracts/${id}`);
+  }
+
+  createContract(req: ContractRequest): Observable<unknown> {
+    return this.http.post('/api/contracts/', req);
+  }
+
+  createContractFromTransaction(transactionId: number): Observable<unknown> {
+    return this.http.post(`/api/contracts/from-transaction/${transactionId}`, {});
+  }
+
+  updateContract(id: number, req: ContractRequest): Observable<unknown> {
+    return this.http.put(`/api/contracts/${id}`, req);
+  }
+
+  deleteContract(id: number): Observable<unknown> {
+    return this.http.delete(`/api/contracts/${id}`);
+  }
+
+  getForecast(months: number): Observable<MonthForecast[]> {
+    return this.http.get<MonthForecast[]>('/api/contracts/forecast', { params: { months } });
   }
 
   private toParams(filter: TransactionFilter, extra: Record<string, unknown>): HttpParams {

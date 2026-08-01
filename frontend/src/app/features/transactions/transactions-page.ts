@@ -88,6 +88,10 @@ export class TransactionsPage {
     this.api.deleteTransaction(t.id).subscribe(() => this.load(this.data()?.page ?? 1));
   }
 
+  protected createContract(t: TransactionDto): void {
+    this.api.createContractFromTransaction(t.id).subscribe(() => this.load(this.data()?.page ?? 1));
+  }
+
   protected exportUrl(kind: 'xlsx' | 'csv'): string {
     return this.api.exportUrl(kind, this.filter());
   }

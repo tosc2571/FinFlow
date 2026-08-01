@@ -18,7 +18,7 @@ public record ImportFileResult(
 /// parse, skip duplicates via DedupeHash, classify against the DB rules
 /// (first match wins, like the CLI's Classifier), and persist as an ImportBatch.
 /// </summary>
-public class ImportService(AppDbContext db, ClassificationService classification)
+public class ImportService(AppDbContext db, ClassificationService classification, ContractService contracts)
 {
     private readonly ParserRegistry _registry = new();
 
@@ -29,7 +29,7 @@ public class ImportService(AppDbContext db, ClassificationService classification
     public AnalyzeFileResult Analyze(string filePath, string fileName) =>
         new(fileName, _registry.Detect(filePath)?.BankName);
 
-    public ImportFileResult ImportFile(string filePath, string fileName, string? bankHint)
+    public async Task<ImportFileResult> ImportFileAsync(string filePath, string fileName, string? bankHint)
     {
         bool hasHint = !string.IsNullOrEmpty(bankHint) && !bankHint.Equals("auto", StringComparison.OrdinalIgnoreCase);
         IBankCsvParser? parser = hasHint
@@ -67,7 +67,7 @@ public class ImportService(AppDbContext db, ClassificationService classification
             if (!knownHashes.Add(hash)) { duplicates++; continue; }
 
             (int? categoryId, ClassificationStatus status) = rules.Classify(lt.CounterpartyName, lt.Purpose);
-            db.Transactions.Add(new Transaction
+            Transaction transaction = new()
             {
                 ImportBatch = batch,
                 SourceBank = lt.SourceBank,
@@ -84,13 +84,15 @@ public class ImportService(AppDbContext db, ClassificationService classification
                 CategoryId = categoryId,
                 ClassificationStatus = status,
                 DedupeHash = hash,
-            });
+            };
+            await contracts.TryMatchAsync(transaction);
+            db.Transactions.Add(transaction);
             imported++;
         }
 
         batch.TransactionCount = imported;
         batch.DuplicateCount = duplicates;
-        db.SaveChanges();
+        await db.SaveChangesAsync();
         return new ImportFileResult(fileName, parser.BankName, batch.Id, imported, duplicates, null);
     }
 

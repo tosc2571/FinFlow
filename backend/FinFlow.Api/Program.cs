@@ -27,6 +27,7 @@ builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlite(connect
 builder.Services.AddScoped<ClassificationService>();
 builder.Services.AddScoped<ImportService>();
 builder.Services.AddScoped<DashboardService>();
+builder.Services.AddScoped<ContractService>();
 builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddEndpointsApiExplorer();
@@ -57,6 +58,7 @@ app.MapCategoryEndpoints();
 app.MapRuleEndpoints();
 app.MapDashboardEndpoints();
 app.MapExportEndpoints();
+app.MapContractEndpoints();
 
 // SPA fallback: client-side routes like /dashboard resolve to index.html.
 if (File.Exists(Path.Combine(app.Environment.WebRootPath ?? "", "index.html")))

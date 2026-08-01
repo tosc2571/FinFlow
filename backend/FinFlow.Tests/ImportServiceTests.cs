@@ -36,6 +36,9 @@ public class ImportServiceTests : IDisposable
         return ctx;
     }
 
+    private static ImportService CreateService(AppDbContext ctx) =>
+        new(ctx, new ClassificationService(ctx), new ContractService(ctx));
+
     private string CreateTempCsv(string content)
     {
         string path = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".csv");
@@ -48,7 +51,7 @@ public class ImportServiceTests : IDisposable
     public void Analyze_DkbHeader_DetectsDkb()
     {
         using AppDbContext ctx = CreateContext();
-        ImportService svc = new(ctx, new ClassificationService(ctx));
+        ImportService svc = CreateService(ctx);
 
         AnalyzeFileResult result = svc.Analyze(CreateTempCsv(DkbTwoRows), "export.csv");
 
@@ -59,7 +62,7 @@ public class ImportServiceTests : IDisposable
     public void Analyze_UnknownFormat_ReturnsNull()
     {
         using AppDbContext ctx = CreateContext();
-        ImportService svc = new(ctx, new ClassificationService(ctx));
+        ImportService svc = CreateService(ctx);
 
         AnalyzeFileResult result = svc.Analyze(CreateTempCsv("foo;bar;baz\n1;2;3\n"), "unknown.csv");
 
@@ -67,12 +70,12 @@ public class ImportServiceTests : IDisposable
     }
 
     [Fact]
-    public void ImportFile_PersistsTransactionsAndBatch()
+    public async Task ImportFile_PersistsTransactionsAndBatch()
     {
         using AppDbContext ctx = CreateContext();
-        ImportService svc = new(ctx, new ClassificationService(ctx));
+        ImportService svc = CreateService(ctx);
 
-        ImportFileResult result = svc.ImportFile(CreateTempCsv(DkbTwoRows), "export.csv", null);
+        ImportFileResult result = await svc.ImportFileAsync(CreateTempCsv(DkbTwoRows), "export.csv", null);
 
         Assert.Null(result.Error);
         Assert.Equal("dkb", result.Bank);
@@ -87,13 +90,13 @@ public class ImportServiceTests : IDisposable
     }
 
     [Fact]
-    public void ImportFile_ReimportSameFile_SkipsAllAsDuplicates()
+    public async Task ImportFile_ReimportSameFile_SkipsAllAsDuplicates()
     {
         using AppDbContext ctx = CreateContext();
-        ImportService svc = new(ctx, new ClassificationService(ctx));
+        ImportService svc = CreateService(ctx);
 
-        svc.ImportFile(CreateTempCsv(DkbTwoRows), "export.csv", null);
-        ImportFileResult second = svc.ImportFile(CreateTempCsv(DkbTwoRows), "export.csv", null);
+        await svc.ImportFileAsync(CreateTempCsv(DkbTwoRows), "export.csv", null);
+        ImportFileResult second = await svc.ImportFileAsync(CreateTempCsv(DkbTwoRows), "export.csv", null);
 
         Assert.Equal(0, second.Imported);
         Assert.Equal(2, second.Duplicates);
@@ -101,7 +104,7 @@ public class ImportServiceTests : IDisposable
     }
 
     [Fact]
-    public void ImportFile_MatchingRule_AssignsCategoryAndStatus()
+    public async Task ImportFile_MatchingRule_AssignsCategoryAndStatus()
     {
         using AppDbContext ctx = CreateContext();
         Category groceries = new() { Name = "Lebensmittel" };
@@ -114,9 +117,9 @@ public class ImportServiceTests : IDisposable
             Status = ClassificationRuleStatus.Ignore,
         });
         ctx.SaveChanges();
-        ImportService svc = new(ctx, new ClassificationService(ctx));
+        ImportService svc = CreateService(ctx);
 
-        svc.ImportFile(CreateTempCsv(DkbTwoRows), "export.csv", null);
+        await svc.ImportFileAsync(CreateTempCsv(DkbTwoRows), "export.csv", null);
 
         Transaction rewe = ctx.Transactions.Single(t => t.CounterpartyName == "REWE SAGT DANKE");
         Assert.Equal(groceries.Id, rewe.CategoryId);
@@ -128,12 +131,12 @@ public class ImportServiceTests : IDisposable
     }
 
     [Fact]
-    public void ImportFile_UnknownFormat_CreatesFailedBatch()
+    public async Task ImportFile_UnknownFormat_CreatesFailedBatch()
     {
         using AppDbContext ctx = CreateContext();
-        ImportService svc = new(ctx, new ClassificationService(ctx));
+        ImportService svc = CreateService(ctx);
 
-        ImportFileResult result = svc.ImportFile(CreateTempCsv("foo;bar;baz\n1;2;3\n"), "unknown.csv", null);
+        ImportFileResult result = await svc.ImportFileAsync(CreateTempCsv("foo;bar;baz\n1;2;3\n"), "unknown.csv", null);
 
         Assert.NotNull(result.Error);
         Assert.Equal(0, result.Imported);
@@ -144,17 +147,42 @@ public class ImportServiceTests : IDisposable
     }
 
     [Fact]
-    public void ImportFile_WrongBankHint_FailsInsteadOfMisparsing()
+    public async Task ImportFile_WrongBankHint_FailsInsteadOfMisparsing()
     {
         using AppDbContext ctx = CreateContext();
-        ImportService svc = new(ctx, new ClassificationService(ctx));
+        ImportService svc = CreateService(ctx);
 
         // File is DKB, but the user forces "ing" — must fail, not silently misparse.
-        ImportFileResult result = svc.ImportFile(CreateTempCsv(DkbTwoRows), "export.csv", "ing");
+        ImportFileResult result = await svc.ImportFileAsync(CreateTempCsv(DkbTwoRows), "export.csv", "ing");
 
         Assert.NotNull(result.Error);
         Assert.Equal(0, result.Imported);
         Assert.Equal(ImportStatus.Failed, ctx.ImportBatches.Single().Status);
+    }
+
+    [Fact]
+    public async Task ImportFile_MatchesExistingContract()
+    {
+        using AppDbContext ctx = CreateContext();
+        Contract rent = new()
+        {
+            Name = "Rent",
+            NominalAmount = -1400.00m,
+            Period = ContractPeriod.Monthly,
+            AnchorDate = new DateOnly(2025, 3, 1),
+            CounterpartyPattern = "Landlord GmbH",
+            AmountTolerance = 0.05m,
+        };
+        ctx.Contracts.Add(rent);
+        ctx.SaveChanges();
+        ImportService svc = CreateService(ctx);
+
+        await svc.ImportFileAsync(CreateTempCsv(DkbTwoRows), "export.csv", null);
+
+        Transaction landlord = ctx.Transactions.Single(t => t.CounterpartyName == "Landlord GmbH");
+        Assert.Equal(rent.Id, landlord.ContractId);
+        Transaction rewe = ctx.Transactions.Single(t => t.CounterpartyName == "REWE SAGT DANKE");
+        Assert.Null(rewe.ContractId);
     }
 
     public void Dispose()

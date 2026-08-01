@@ -67,3 +67,34 @@
 @if (trend().length === 0 && byCategory().length === 0 && summary()) {
   <p class="muted">No data for this year yet — import some bank CSV files first.</p>
 }
+
+@if (forecastChart(); as config) {
+  <div class="panel">
+    <h2>Forecast (next 6 months)</h2>
+    <app-chart [config]="config" />
+    <table>
+      <thead>
+        <tr>
+          <th>Month</th>
+          <th class="amount">Expected income</th>
+          <th class="amount">Expected expenses</th>
+          <th class="amount">Net</th>
+          <th>Due contracts</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of forecast(); track row.year + '-' + row.month) {
+          <tr>
+            <td>{{ monthNames[row.month - 1] }} {{ row.year }}</td>
+            <td class="amount">{{ row.expectedIncome | number: '1.2-2' }} €</td>
+            <td class="amount neg">{{ row.expectedExpenses | number: '1.2-2' }} €</td>
+            <td class="amount" [class.neg]="row.net < 0">{{ row.net | number: '1.2-2' }} €</td>
+            <td class="muted">{{ row.dueContracts.length === 0 ? '—' : row.dueContracts.length }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+} @else {
+  <p class="muted">No active contracts yet — add some on the Contracts page to see a forecast here.</p>
+}

@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ChartConfiguration } from 'chart.js';
 import { ApiService } from '../../core/api.service';
 import { ChartComponent } from '../../shared/chart';
-import { CategoryBreakdown, DashboardSummary, MonthlyTrend } from '../../shared/models';
+import { CategoryBreakdown, DashboardSummary, MonthForecast, MonthlyTrend } from '../../shared/models';
 
 // Validated reference palette: diverging blue/red pair for polarity (income vs. expenses).
 const POSITIVE = '#2a78d6';
@@ -23,9 +23,15 @@ export class DashboardPage {
   protected readonly summary = signal<DashboardSummary | null>(null);
   protected readonly byCategory = signal<CategoryBreakdown[]>([]);
   protected readonly trend = signal<MonthlyTrend[]>([]);
+  protected readonly forecast = signal<MonthForecast[]>([]);
+
+  protected readonly monthNames = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  ];
 
   constructor() {
     this.load();
+    this.api.getForecast(6).subscribe((f) => this.forecast.set(f));
   }
 
   protected load(): void {
@@ -54,6 +60,39 @@ export class DashboardPage {
           {
             label: 'Expenses',
             data: rows.map((r) => r.expenses),
+            backgroundColor: NEGATIVE,
+            borderRadius: 4,
+            maxBarThickness: 28,
+          },
+        ],
+      },
+      options: {
+        plugins: { legend: { position: 'bottom' } },
+        scales: { x: { grid: { display: false } } },
+      },
+    };
+  });
+
+  /** Forecast: same income/expense polarity pair as the historical trend chart, so the two
+   * read as one continuous story even though the data sources differ (actuals vs. contracts). */
+  protected readonly forecastChart = computed<ChartConfiguration | null>(() => {
+    const rows = this.forecast();
+    if (rows.length === 0) return null;
+    return {
+      type: 'bar',
+      data: {
+        labels: rows.map((r) => `${this.monthNames[r.month - 1]} ${r.year}`),
+        datasets: [
+          {
+            label: 'Expected income',
+            data: rows.map((r) => r.expectedIncome),
+            backgroundColor: POSITIVE,
+            borderRadius: 4,
+            maxBarThickness: 28,
+          },
+          {
+            label: 'Expected expenses',
+            data: rows.map((r) => r.expectedExpenses),
             backgroundColor: NEGATIVE,
             borderRadius: 4,
             maxBarThickness: 28,

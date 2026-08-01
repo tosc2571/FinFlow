@@ -37,7 +37,7 @@ public static class ImportEndpoints
                 IFormFile file = form.Files[i];
                 string? hint = i < banks.Length ? banks[i] : null;
                 string tmp = await SaveToTempFile(file);
-                try { results.Add(svc.ImportFile(tmp, file.FileName, hint)); }
+                try { results.Add(await svc.ImportFileAsync(tmp, file.FileName, hint)); }
                 finally { File.Delete(tmp); }
             }
             return Results.Ok(results);
