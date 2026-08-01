@@ -12,6 +12,9 @@ backend/FinFlow.Cli/rules.json
 *.db-shm
 *.db-wal
 
+# Lives next to the database (dev: next to the project) — a local runtime artifact, not source
+settings.json
+
 # Build artifacts of scripts/publish.* (frontend copied into the API + published output)
 backend/FinFlow.Api/wwwroot/
 publish/

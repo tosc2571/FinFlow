@@ -10,8 +10,11 @@ namespace FinFlow.Api.Services;
 /// </summary>
 public static class DatabaseBackup
 {
-    public static void BackupIfNeeded(string dbPath, ILogger logger, DateOnly? today = null)
+    public static void BackupIfNeeded(string dbPath, ILogger logger, DateOnly? today = null, bool enabled = true)
     {
+        if (!enabled)
+            return;
+
         if (!File.Exists(dbPath))
             return; // fresh install — nothing to back up yet
 

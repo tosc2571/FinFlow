@@ -16,6 +16,7 @@ import {
   ReclassifyResult,
   RuleDto,
   RuleStatus,
+  SettingsDto,
   TransactionFilter,
 } from '../shared/models';
 
@@ -144,6 +145,16 @@ export class ApiService {
 
   getTrend(filter: TransactionFilter): Observable<MonthlyTrend[]> {
     return this.http.get<MonthlyTrend[]>('/api/dashboard/trend', { params: this.toParams(filter, {}) });
+  }
+
+  // --- settings ---
+
+  getSettings(): Observable<SettingsDto> {
+    return this.http.get<SettingsDto>('/api/settings/');
+  }
+
+  updateSettings(req: { autoBackupEnabled: boolean }): Observable<SettingsDto> {
+    return this.http.put<SettingsDto>('/api/settings/', req);
   }
 
   private toParams(filter: TransactionFilter, extra: Record<string, unknown>): HttpParams {
