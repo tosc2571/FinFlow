@@ -1,0 +1,29 @@
+name: Docker CI
+
+# Builds the Docker image and runs scripts/smoke-test-docker.sh against a real container on
+# every PR (required check for merging into main — so no path filter there) and, path-filtered,
+# on pushes to main.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Dockerfile'
+      - '.dockerignore'
+      - 'docker-compose.yml'
+      - 'backend/**'
+      - 'frontend/**'
+      - 'scripts/smoke-test-docker.sh'
+      - '.github/workflows/docker-ci.yml'
+  pull_request:
+    branches: [main]
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t finflow:ci .
+      - name: Smoke test
+        run: bash scripts/smoke-test-docker.sh finflow:ci

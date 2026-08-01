@@ -1,0 +1,18 @@
+# Example self-hosting setup (e.g. on a NAS). No authentication — see the README's Docker
+# section before exposing this beyond your own network.
+#
+# Configure via a .env file next to this one — copy .env.example to .env and edit it there.
+# Do not edit the values below directly; FINFLOW_PORT/FINFLOW_DATA_LOCATION/FINFLOW_VERSION
+# all come from .env so an update never means re-editing this file.
+
+services:
+  finflow:
+    container_name: finflow
+    image: ghcr.io/tosc2571/finflow:${FINFLOW_VERSION:-latest}
+    ports:
+      - "${FINFLOW_PORT:-5199}:5199"
+    volumes:
+      # Do not edit the next line. If you want to change where FinFlow stores its data,
+      # edit the value of FINFLOW_DATA_LOCATION in the .env file instead.
+      - ${FINFLOW_DATA_LOCATION:-./data}:/data
+    restart: unless-stopped
