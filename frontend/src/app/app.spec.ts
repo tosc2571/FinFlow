@@ -21,6 +21,6 @@ describe('App', () => {
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('.brand')?.textContent).toContain('FinFlow');
-    expect(compiled.querySelectorAll('nav a').length).toBe(5);
+    expect(compiled.querySelectorAll('nav a').length).toBe(6);
   });
 });

@@ -131,6 +131,11 @@ export interface TransactionFilter {
   sort?: string;
 }
 
+export interface SettingsDto {
+  version: string;
+  autoBackupEnabled: boolean;
+}
+
 export const STATUS_LABELS: Record<ClassificationStatus, string> = {
   Auto: 'Auto',
   NeedsReview: 'Needs review',

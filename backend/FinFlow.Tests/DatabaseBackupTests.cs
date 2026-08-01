@@ -53,6 +53,16 @@ public class DatabaseBackupTests : IDisposable
     }
 
     [Fact]
+    public void BackupIfNeeded_Disabled_DoesNothing()
+    {
+        File.WriteAllText(_dbPath, "fake sqlite content");
+
+        DatabaseBackup.BackupIfNeeded(_dbPath, NullLogger.Instance, new DateOnly(2026, 7, 20), enabled: false);
+
+        Assert.False(Directory.Exists(Path.Combine(_dir, "backups")));
+    }
+
+    [Fact]
     public void BackupIfNeeded_NextDay_CreatesAnAdditionalBackup()
     {
         File.WriteAllText(_dbPath, "day one");
