@@ -1,0 +1,22 @@
+<h1>Settings</h1>
+
+@if (settings(); as s) {
+  <div class="panel">
+    <h2>About</h2>
+    <p>Version: <strong>{{ s.version }}</strong></p>
+  </div>
+
+  <div class="panel">
+    <h2>Backups</h2>
+    <p class="muted">
+      Creates a copy of your database once per day as a safety net against accidental data loss.
+      Stored in the <code>backups/</code> folder next to your database.
+    </p>
+    <label>
+      <input type="checkbox" [checked]="s.autoBackupEnabled" (change)="toggleAutoBackup()" />
+      Automatic daily backup
+    </label>
+  </div>
+} @else {
+  <p class="muted">Loading…</p>
+}

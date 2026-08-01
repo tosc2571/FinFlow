@@ -36,7 +36,8 @@ builder.Services.AddSwaggerGen();
 var app = builder.Build();
 
 app.Logger.LogInformation("Database file: {DbPath}", Path.GetFullPath(resolvedDbPath));
-DatabaseBackup.BackupIfNeeded(resolvedDbPath, app.Logger);
+AppSettings settings = AppSettingsStore.Load(resolvedDbPath);
+DatabaseBackup.BackupIfNeeded(resolvedDbPath, app.Logger, enabled: settings.AutoBackupEnabled);
 
 using (IServiceScope scope = app.Services.CreateScope())
     scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.Migrate();
@@ -59,6 +60,7 @@ app.MapRuleEndpoints();
 app.MapDashboardEndpoints();
 app.MapExportEndpoints();
 app.MapContractEndpoints();
+app.MapSettingsEndpoints(resolvedDbPath);
 
 // SPA fallback: client-side routes like /dashboard resolve to index.html.
 if (File.Exists(Path.Combine(app.Environment.WebRootPath ?? "", "index.html")))
