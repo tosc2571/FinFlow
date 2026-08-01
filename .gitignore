@@ -19,5 +19,8 @@ publish/
 # scripts/finflow.* installs the app here — never commit a local test install
 scripts/app/
 
+# Claude Code worktree sessions (parallel-agent isolation) — never commit
+.claude/worktrees/
+
 ~$*.xlsx
 ~$*.docx
