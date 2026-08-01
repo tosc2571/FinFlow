@@ -2,7 +2,7 @@
 
 Self-hosted web app (plus a standalone CLI) that parses German bank CSV exports, classifies transactions for your Steuererklärung (tax return) and household budget, and exports a color-coded Excel workbook.
 
-Supported banks: **DKB** (checking + credit card), **ING**, **HVB**, **Trade Republic**, **Postbank**, **Berliner Volksbank**.
+Supported banks: **DKB** (checking + credit card), **ING**, **HVB** (checking + credit card), **Trade Republic**, **Postbank**, **Berliner Volksbank**.
 
 > **Built with AI assistance.** This project was developed with the help of Claude Code. Review the classification results yourself (especially anything marked "needs review" or "ignored") before relying on them for anything official — see [Legal notes](#legal-notes).
 

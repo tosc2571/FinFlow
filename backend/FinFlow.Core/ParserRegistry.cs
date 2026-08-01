@@ -14,6 +14,7 @@ public sealed class ParserRegistry
         new DkbKreditkarteCsvParser(),
         new IngCsvParser(),
         new HvbCsvParser(),
+        new HvbKreditkarteCsvParser(),
         new TradeRepublicCsvParser(),
         new PostbankCsvParser(),
         new VolksbankCsvParser(),
