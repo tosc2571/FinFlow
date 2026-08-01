@@ -1,0 +1,14 @@
+**/bin/
+**/obj/
+**/node_modules/
+**/dist/
+backend/FinFlow.Api/wwwroot/
+publish/
+scripts/app/
+*.db
+*.db-shm
+*.db-wal
+backend/FinFlow.Cli/rules.json
+.git/
+.claude/
+.github/

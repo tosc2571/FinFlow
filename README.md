@@ -31,7 +31,7 @@ Supported banks: **DKB** (checking + credit card), **ING**, **HVB**, **Trade Rep
 
 ## Getting started (web app)
 
-No Docker needed — FinFlow runs as a single local app that serves both the UI and the API.
+FinFlow runs as a single app that serves both the UI and the API — no Docker required, though it's supported for self-hosting (e.g. on a NAS), see [Docker](#docker) below.
 
 **Easiest: use the launcher.** Download just one file — [`finflow.ps1`](scripts/finflow.ps1) (Windows) or [`finflow.sh`](scripts/finflow.sh) (Linux) — and run it. It checks GitHub for the latest release, downloads and SHA256-verifies it into a local `app` folder next to itself (only on first run or when a newer version is out), then starts FinFlow and opens **http://localhost:5199**. Run it again any time: already up to date → it just starts the app; already running → it just opens the browser. No .NET, Node, or Docker required — the binaries are self-contained.
 
@@ -70,6 +70,22 @@ scripts/dev.ps1      # Windows — or scripts/dev.sh on Linux/macOS
 ```
 
 Or manually: `dotnet run --project backend/FinFlow.Api` in one terminal, `cd frontend && npm install && npm start` in another, then open http://localhost:4200.
+
+### Docker
+
+An alternative to the launcher/manual-install paths above — useful for self-hosting on a NAS or any machine you'd rather not install .NET/Node on directly:
+
+```bash
+git clone https://github.com/tosc2571/FinFlow.git
+cd FinFlow
+docker compose up -d --build
+```
+
+Open **http://localhost:5199**. The database (and its daily backup + `settings.json`) lives in the `finflow-data` named volume declared in [`docker-compose.yml`](docker-compose.yml), so it survives `docker compose down`/rebuilds — only `docker compose down -v` removes it.
+
+To run on a different port, set `FINFLOW_PORT` instead of editing any file inside the image or container: `FINFLOW_PORT=8080 docker compose up -d --build`. That's the **only** place the exposed port is configured — the container itself always listens on a fixed internal port.
+
+> **No authentication.** Same caveat as every other install path (see [Legal notes](#legal-notes)) — don't expose the container directly to the internet; put it behind a VPN or an authenticated reverse proxy.
 
 ---
 
