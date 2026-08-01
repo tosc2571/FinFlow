@@ -38,7 +38,8 @@ Failed FinFlow.Tests.HvbCsvParserTests.Parse_OneRow_MapsFieldsCorrectly
 
 | Test class | Parser | Focus |
 |---|---|---|
-| `HvbCsvParserTests` | HypoVereinsbank | Semicolon delimiter, `Empfaenger 1/2` |
+| `HvbCsvParserTests` | HypoVereinsbank (checking) | Semicolon delimiter, `Empfaenger 1/2` |
+| `HvbKreditkarteCsvParserTests` | HypoVereinsbank (credit card) | `Kartennummer` header — byte-identical to DKB's credit card export, documented as a known auto-detect ambiguity |
 | `IngCsvParserTests` | ING DiBa | Metadata rows before the header, optional balance column, `Valuta`/`Wertstellungsdatum` variants |
 | `DkbCsvParserTests` | DKB checking account | Incoming vs. outgoing (`Zahlungspflichtige*r`) |
 | `DkbKreditkarteCsvParserTests` | DKB credit card | `Kartennummer` header, empty amount → row skipped |
