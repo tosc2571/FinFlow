@@ -23,10 +23,12 @@ WORKDIR /app
 COPY --from=backend-build /app/publish ./
 
 # Fixed internal port and DB location — the only thing a self-hoster changes is the
-# docker-compose.yml port mapping (see README's Docker section), never these.
-ENV ASPNETCORE_URLS=http://+:5199
+# docker-compose.yml port mapping (see README's Docker section), never these. The listen
+# address is passed as a --urls command-line argument rather than ASPNETCORE_URLS: command-line
+# args are the only configuration source that reliably outranks appsettings.json's own
+# "Urls": "http://localhost:5199" (meant for local dev) — an env var here does not.
 ENV ConnectionStrings__Default="Data Source=/data/finflow.db"
 VOLUME /data
 EXPOSE 5199
 
-ENTRYPOINT ["dotnet", "FinFlow.Api.dll"]
+ENTRYPOINT ["dotnet", "FinFlow.Api.dll", "--urls", "http://+:5199"]
