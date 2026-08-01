@@ -14,7 +14,10 @@ container=finflow-smoke-test
 
 cleanup() {
   docker rm -f "$container" > /dev/null 2>&1 || true
-  rm -rf "$data_dir"
+  # The container runs as root, so files it wrote under $data_dir are root-owned on the host
+  # too — harmless on a throwaway CI runner, but don't let a permission-denied rm here mask an
+  # otherwise-passing test run.
+  rm -rf "$data_dir" 2>/dev/null || true
 }
 trap cleanup EXIT
 
