@@ -1,6 +1,6 @@
 ---
 name: git-workflow
-description: Use for any commit, push, or pull-request work in FinFlow. main is protected — no direct pushes for anyone, admins included; every change reaches main via a pull request with passing backend/frontend/smoke checks. Encodes branching, commit style, the pre-push privacy check, and the recovery steps when commits accidentally land on local main.
+description: Use for any commit, push, pull-request, or GitHub issue work in FinFlow. main is protected — no direct pushes for anyone, admins included; every change reaches main via a pull request with passing backend/frontend/smoke checks. Encodes branching, commit style, the pre-push privacy check, GitHub issue conventions, and the recovery steps when commits accidentally land on local main.
 ---
 
 # Git workflow (protected `main`)
@@ -31,6 +31,24 @@ Branch protection on `main` (set via `gh api`, applies to admins too):
    ends with the Claude Code attribution line from the harness guidelines.
 6. Wait for `backend`, `frontend`, and `smoke` to pass, then merge
    (`gh pr merge --merge`) and delete the branch.
+
+## GitHub issues
+
+- English, per [language-conventions](../language-conventions/SKILL.md) — even
+  though the user writes to you in German.
+- Match the house style visible in past issues (`gh issue list --repo
+  tosc2571/FinFlow --state all`, then `gh issue view <n>`): `## Goal`, then
+  `## Proposed behavior` (with sub-sections as needed), `## Design notes`,
+  `## Acceptance criteria` as a checklist, ending with the Claude Code
+  attribution line from the harness guidelines.
+- Check `--state all` (not just open) for related or duplicate issues before
+  drafting, and cross-reference them (`#4`, `#5`, ...) where relevant.
+- If the body includes implementation details the user didn't explicitly ask
+  for (new tables/endpoints, specific acceptance criteria, etc.), show the
+  draft in chat and get a go-ahead before `gh issue create` — don't publish
+  invented scope straight to a public repo. Skip this step only when the
+  user's request already fully specifies the content or says to just create
+  it.
 
 ## If commits accidentally landed on local `main`
 
