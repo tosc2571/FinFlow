@@ -1,0 +1,18 @@
+# Example self-hosting setup (e.g. on a NAS). No authentication — see the README's Docker
+# section before exposing this beyond your own network.
+#
+# The externally-exposed port is the ONLY thing you should change to run on a different port;
+# either edit the left side of the mapping below, or set FINFLOW_PORT before starting:
+#   FINFLOW_PORT=8080 docker compose up -d
+
+services:
+  finflow:
+    build: .
+    ports:
+      - "${FINFLOW_PORT:-5199}:5199"
+    volumes:
+      - finflow-data:/data
+    restart: unless-stopped
+
+volumes:
+  finflow-data:
