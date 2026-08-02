@@ -10,7 +10,10 @@ namespace FinFlow.Api.Services;
 /// </summary>
 public class PeriodicBackupService(string dbPath, ILogger<PeriodicBackupService> logger) : BackgroundService
 {
-    private static readonly TimeSpan CheckInterval = TimeSpan.FromMinutes(30);
+    // Backups themselves are capped at one a day, so checking more often than that buys
+    // nothing but extra disk I/O for no benefit — a NAS running this continuously shouldn't
+    // pay for polling faster than the thing it's polling for can even change.
+    private static readonly TimeSpan CheckInterval = TimeSpan.FromDays(1);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
