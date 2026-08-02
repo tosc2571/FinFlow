@@ -8,9 +8,9 @@ namespace FinFlow.Parsing;
 ///
 /// This header is byte-identical to DkbKreditkarteCsvParser's (both banks' card statements
 /// come out of the same processor format) — auto-detection (ParserRegistry.Detect, no hint)
-/// therefore always resolves to whichever of the two is registered first and can't tell them
-/// apart. Import an HVB card export via the "bank" dropdown/hint instead of relying on
-/// auto-detect; DetectWithHint filters by BankName first, which does disambiguate correctly.
+/// can't tell them apart and reports the file as unrecognized rather than guessing. Import an
+/// HVB card export via the "bank" dropdown/hint instead; DetectWithHint filters by BankName
+/// first, which does disambiguate correctly.
 /// </summary>
 public sealed class HvbKreditkarteCsvParser : BankCsvParserBase
 {

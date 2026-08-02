@@ -22,6 +22,12 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
 COPY --from=backend-build /app/publish ./
 
+# Version shown on the Settings/About page (AppVersion.cs reads a "VERSION" file next to the
+# executable, same convention as the win-x64/linux-x64 release artifacts). release.yml's docker
+# job passes --build-arg VERSION=<tag>; a plain `docker build`/PR check build defaults to "dev".
+ARG VERSION=dev
+RUN echo -n "$VERSION" > VERSION
+
 # Fixed internal port and DB location — the only thing a self-hoster changes is the
 # docker-compose.yml port mapping (see README's Docker section), never these. The listen
 # address is passed as a --urls command-line argument rather than ASPNETCORE_URLS: command-line

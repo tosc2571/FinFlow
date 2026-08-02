@@ -22,8 +22,20 @@ public sealed class ParserRegistry
 
     public IReadOnlyList<IBankCsvParser> Parsers => _parsers;
 
-    public IBankCsvParser? Detect(string filePath) =>
-        _parsers.FirstOrDefault(p => p.CanParse(filePath));
+    /// <summary>
+    /// If a file's header matches parsers from more than one bank (e.g. DKB's and HVB's credit
+    /// card exports are byte-identical — see HvbKreditkarteCsvParser), silently picking the
+    /// first-registered one would guess wrong roughly half the time. Returning null instead
+    /// surfaces it as "not recognized" in the import UI, forcing a conscious pick via the bank
+    /// dropdown (DetectWithHint) rather than a confident-looking but unreliable auto-guess.
+    /// </summary>
+    public IBankCsvParser? Detect(string filePath)
+    {
+        List<IBankCsvParser> matches = [.. _parsers.Where(p => p.CanParse(filePath))];
+        return matches.Select(p => p.BankName).Distinct().Count() > 1
+            ? null
+            : matches.FirstOrDefault();
+    }
 
     /// <summary>
     /// Like Detect, but first filters to parsers with a matching BankName.
