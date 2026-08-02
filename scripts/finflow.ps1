@@ -5,10 +5,17 @@
 #   - Already up to date -> just starts the app.
 #   - Already running -> just opens the browser.
 # Fully automatic, no prompts. Safe to re-run any time.
+#
+# -LauncherDir lets finflow.bat (a plain double-clickable wrapper - .ps1 files don't run on
+# double-click) invoke this script's content directly without saving it to disk first, in which
+# case $PSScriptRoot would be empty; the .bat passes its own folder explicitly instead.
+param(
+    [string]$LauncherDir = $PSScriptRoot
+)
 $ErrorActionPreference = 'Stop'
 
 $repo = 'tosc2571/FinFlow'
-$launcherDir = $PSScriptRoot
+$launcherDir = $LauncherDir
 $appDir = Join-Path $launcherDir 'app'
 $versionFile = Join-Path $appDir 'VERSION'
 $healthUrl = 'http://localhost:5199/api/import/batches'
