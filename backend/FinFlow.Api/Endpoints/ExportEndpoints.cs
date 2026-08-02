@@ -69,10 +69,12 @@ public static class ExportEndpoints
     };
 
     // ManualOverride is a user-confirmed category — green ("auto") in the workbook.
+    // InternalTransfer folds into the same "ignorieren" bucket as Ignored — excluded from the
+    // money sheets either way, and not worth a dedicated sheet in the CLI's shared exporter.
     private static string ToCliStatus(Entities.ClassificationStatus status) => status switch
     {
         Entities.ClassificationStatus.Auto or Entities.ClassificationStatus.ManualOverride => "auto",
-        Entities.ClassificationStatus.Ignored => "ignorieren",
+        Entities.ClassificationStatus.Ignored or Entities.ClassificationStatus.InternalTransfer => "ignorieren",
         _ => "prüfen",
     };
 

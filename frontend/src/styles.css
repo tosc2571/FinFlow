@@ -195,6 +195,11 @@ button.danger {
   color: #a02020;
 }
 
+.badge.internaltransfer {
+  background: #f0e6f9;
+  color: #6b2fa0;
+}
+
 .muted {
   color: #898781;
 }

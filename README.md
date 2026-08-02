@@ -17,6 +17,7 @@ Supported banks: **DKB** (checking + credit card), **ING**, **HVB** (checking + 
 - Classification rules (regex → category → status) managed in the UI, with a live pattern test that shows matching transactions as you type, and one-click re-classification.
 - Dashboard: income/expenses/net summary, monthly trend, per-category breakdown, and a multi-month forecast driven by your contracts.
 - Contracts: track recurring payments (rent, insurance, salary, subscriptions) by period and due date. Expected amounts are a rolling average of recent matched payments rather than a fixed value, so fluctuating income (bonuses, overtime) doesn't trigger false deviations. Missing or off-amount payments are surfaced for review, not silently ignored. Create one from scratch or from an existing transaction with one click.
+- Accounts: register your own bank accounts (by IBAN) so money moved between them — even across different banks — is recognized as an internal transfer and excluded from income/expense statistics, instead of inflating both sides as fake spending and earning.
 - XLSX/CSV export honoring the current filter — the XLSX is the same tax-return workbook the CLI produces.
 
 **CLI** (stateless — no database, reads CSVs fresh on every run):

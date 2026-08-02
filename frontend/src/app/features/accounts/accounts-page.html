@@ -1,0 +1,56 @@
+<h1>Accounts</h1>
+
+<div class="panel">
+  <h2>{{ editingId === null ? 'New account' : 'Edit account #' + editingId }}</h2>
+  <div class="toolbar">
+    <label>Bank <input type="text" [(ngModel)]="bankName" placeholder="e.g. ING" /></label>
+    <label>Display name <input type="text" [(ngModel)]="displayName" placeholder="e.g. Tagesgeld" /></label>
+    <label style="flex: 1">
+      IBAN <input type="text" style="flex: 1" [(ngModel)]="iban" placeholder="DE12 3456 7890 1234 5678 90" />
+    </label>
+    <button class="primary" [disabled]="!bankName.trim() || !iban.trim()" (click)="save()">
+      {{ editingId === null ? 'Create' : 'Save' }}
+    </button>
+    @if (editingId !== null) {
+      <button (click)="resetForm()">Cancel</button>
+    }
+  </div>
+  <p class="muted">
+    Register your own accounts here (even ones across different banks) so transfers between them
+    are recognized automatically and excluded from income/expense statistics — see the
+    Transactions page for the "mark as internal transfer" fallback when a bank export doesn't
+    include the counterparty's IBAN.
+  </p>
+</div>
+
+<div class="table-scroll">
+<table>
+  <thead>
+    <tr>
+      <th>Bank</th>
+      <th>Display name</th>
+      <th>IBAN</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    @for (a of accounts(); track a.id) {
+      <tr>
+        <td>{{ a.bankName }}</td>
+        <td class="muted">{{ a.displayName }}</td>
+        <td>{{ a.iban }}</td>
+        <td>
+          <button (click)="edit(a)">Edit</button>
+          <button class="danger" (click)="delete(a)">Delete</button>
+        </td>
+      </tr>
+    } @empty {
+      <tr>
+        <td colspan="4" class="muted">
+          No accounts registered yet — add your own accounts above to detect transfers between them.
+        </td>
+      </tr>
+    }
+  </tbody>
+</table>
+</div>

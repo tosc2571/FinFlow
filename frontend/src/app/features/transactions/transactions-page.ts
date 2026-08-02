@@ -20,7 +20,13 @@ export class TransactionsPage {
   private api = inject(ApiService);
 
   protected readonly statusLabels = STATUS_LABELS;
-  protected readonly statuses: ClassificationStatus[] = ['Auto', 'NeedsReview', 'Ignored', 'ManualOverride'];
+  protected readonly statuses: ClassificationStatus[] = [
+    'Auto',
+    'NeedsReview',
+    'Ignored',
+    'ManualOverride',
+    'InternalTransfer',
+  ];
 
   // Filter form state (plain fields — ngModel; zoneless CD runs after template events).
   protected year: number | null = new Date().getFullYear();

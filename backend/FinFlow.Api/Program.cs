@@ -28,6 +28,7 @@ builder.Services.AddScoped<ClassificationService>();
 builder.Services.AddScoped<ImportService>();
 builder.Services.AddScoped<DashboardService>();
 builder.Services.AddScoped<ContractService>();
+builder.Services.AddScoped<TransferDetectionService>();
 builder.Services.AddHostedService(sp =>
     new PeriodicBackupService(resolvedDbPath, sp.GetRequiredService<ILogger<PeriodicBackupService>>()));
 builder.Services.ConfigureHttpJsonOptions(options =>
@@ -63,6 +64,7 @@ app.MapDashboardEndpoints();
 app.MapExportEndpoints();
 app.MapContractEndpoints();
 app.MapSettingsEndpoints(resolvedDbPath);
+app.MapBankAccountEndpoints();
 
 // SPA fallback: client-side routes like /dashboard resolve to index.html.
 if (File.Exists(Path.Combine(app.Environment.WebRootPath ?? "", "index.html")))

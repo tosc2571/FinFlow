@@ -1,6 +1,6 @@
 // DTO shapes mirroring backend/FinFlow.Api (enums arrive as strings via JsonStringEnumConverter).
 
-export type ClassificationStatus = 'Auto' | 'NeedsReview' | 'Ignored' | 'ManualOverride';
+export type ClassificationStatus = 'Auto' | 'NeedsReview' | 'Ignored' | 'ManualOverride' | 'InternalTransfer';
 export type RuleStatus = 'Auto' | 'NeedsReview' | 'Ignore';
 export type ImportStatus = 'Completed' | 'Failed';
 export type ContractPeriod = 'Monthly' | 'Quarterly' | 'SemiAnnually' | 'Annually';
@@ -88,6 +88,7 @@ export interface DashboardSummary {
   transactionCount: number;
   needsReviewCount: number;
   ignoredCount: number;
+  internalTransferCount: number;
 }
 
 export interface CategoryBreakdown {
@@ -144,6 +145,7 @@ export const STATUS_LABELS: Record<ClassificationStatus, string> = {
   NeedsReview: 'Needs review',
   Ignored: 'Ignored',
   ManualOverride: 'Manual',
+  InternalTransfer: 'Internal transfer',
 };
 
 export interface ContractDto {
@@ -199,3 +201,10 @@ export const PERIOD_LABELS: Record<ContractPeriod, string> = {
   SemiAnnually: 'Semi-annually',
   Annually: 'Annually',
 };
+
+export interface BankAccountDto {
+  id: number;
+  bankName: string;
+  displayName: string | null;
+  iban: string;
+}
