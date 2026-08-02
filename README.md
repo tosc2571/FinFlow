@@ -34,7 +34,12 @@ Supported banks: **DKB** (checking + credit card), **ING**, **HVB** (checking + 
 
 FinFlow runs as a single app that serves both the UI and the API — no Docker required, though it's supported for self-hosting (e.g. on a NAS), see [Docker](#docker) below.
 
-**Easiest: use the launcher.** Download just one file — [`finflow.ps1`](scripts/finflow.ps1) (Windows) or [`finflow.sh`](scripts/finflow.sh) (Linux) — and run it. It checks GitHub for the latest release, downloads and SHA256-verifies it into a local `app` folder next to itself (only on first run or when a newer version is out), then starts FinFlow and opens **http://localhost:5199**. Run it again any time: already up to date → it just starts the app; already running → it just opens the browser. No .NET, Node, or Docker required — the binaries are self-contained.
+**Easiest: use the launcher.** Download just one file and run it — no Git, PowerShell, or command line needed:
+
+- Windows: [`finflow.bat`](scripts/finflow.bat) — double-click it. (Or [`finflow.ps1`](scripts/finflow.ps1) if you prefer running it yourself; `finflow.bat` just wraps it so double-clicking works without a "Run with PowerShell" step.)
+- Linux/macOS: [`finflow.sh`](scripts/finflow.sh) — run it from a terminal.
+
+It checks GitHub for the latest release, downloads and SHA256-verifies it into a local `app` folder next to itself (only on first run or when a newer version is out), then starts FinFlow and opens **http://localhost:5199**. Run it again any time: already up to date → it just starts the app; already running → it just opens the browser. No .NET, Node, or Docker required — the binaries are self-contained.
 
 <details>
 <summary>Manual install (no launcher)</summary>
