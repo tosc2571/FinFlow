@@ -96,6 +96,65 @@ public class DashboardServiceTests : IDisposable
         Assert.Equal(-45.50m, february.Net); // ignored excluded
     }
 
+    [Fact]
+    public void GetSummary_ExcludesInternalTransfersFromSumsButCountsThemSeparately()
+    {
+        using AppDbContext ctx = CreateContext();
+        ImportBatch batch = new() { SourceFileName = "seed.csv", DetectedBank = "dkb", Status = ImportStatus.Completed };
+        ctx.ImportBatches.Add(batch);
+        ctx.SaveChanges();
+
+        Transaction Tx(decimal amount, ClassificationStatus status) => new()
+        {
+            ImportBatch = batch,
+            SourceBank = "dkb",
+            BookingDate = new DateOnly(2025, 3, 1),
+            Amount = amount,
+            ClassificationStatus = status,
+            DedupeHash = Guid.NewGuid().ToString(),
+        };
+
+        ctx.Transactions.AddRange(
+            Tx(2000m, ClassificationStatus.Auto),
+            Tx(-500m, ClassificationStatus.InternalTransfer)); // moved to a savings account, not real spending
+        ctx.SaveChanges();
+
+        DashboardSummary summary = new DashboardService(ctx).GetSummary(new TransactionFilterParams(Year: 2025));
+
+        Assert.Equal(2000m, summary.Income);
+        Assert.Equal(0m, summary.Expenses); // the transfer must not count as an expense
+        Assert.Equal(2000m, summary.Net);
+        Assert.Equal(1, summary.TransactionCount); // only the real income counted
+        Assert.Equal(1, summary.InternalTransferCount);
+    }
+
+    [Fact]
+    public void GetByCategoryAndGetTrend_AlsoExcludeInternalTransfers()
+    {
+        using AppDbContext ctx = CreateContext();
+        Category savings = new() { Name = "Sparen" };
+        ctx.Categories.Add(savings);
+        ImportBatch batch = new() { SourceFileName = "seed.csv", DetectedBank = "dkb", Status = ImportStatus.Completed };
+        ctx.ImportBatches.Add(batch);
+        ctx.SaveChanges();
+
+        ctx.Transactions.Add(new Transaction
+        {
+            ImportBatch = batch,
+            SourceBank = "dkb",
+            BookingDate = new DateOnly(2025, 3, 1),
+            Amount = -500m,
+            ClassificationStatus = ClassificationStatus.InternalTransfer,
+            CategoryId = savings.Id,
+            DedupeHash = Guid.NewGuid().ToString(),
+        });
+        ctx.SaveChanges();
+
+        DashboardService svc = new(ctx);
+        Assert.Empty(svc.GetByCategory(new TransactionFilterParams(Year: 2025)));
+        Assert.Empty(svc.GetTrend(new TransactionFilterParams(Year: 2025)));
+    }
+
     public void Dispose()
     {
         SqliteConnection.ClearAllPools();

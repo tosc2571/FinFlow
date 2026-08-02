@@ -37,7 +37,7 @@ public class ImportServiceTests : IDisposable
     }
 
     private static ImportService CreateService(AppDbContext ctx) =>
-        new(ctx, new ClassificationService(ctx), new ContractService(ctx));
+        new(ctx, new ClassificationService(ctx), new ContractService(ctx), new TransferDetectionService(ctx));
 
     private string CreateTempCsv(string content)
     {
@@ -183,6 +183,35 @@ public class ImportServiceTests : IDisposable
         Assert.Equal(rent.Id, landlord.ContractId);
         Transaction rewe = ctx.Transactions.Single(t => t.CounterpartyName == "REWE SAGT DANKE");
         Assert.Null(rewe.ContractId);
+    }
+
+    [Fact]
+    public async Task ImportFile_CounterpartyIbanMatchesOwnAccount_ClassifiesAsInternalTransferOverAnyRule()
+    {
+        using AppDbContext ctx = CreateContext();
+        Category rent = new() { Name = "Miete" };
+        ctx.Categories.Add(rent);
+        ctx.SaveChanges();
+        // A rule that would otherwise categorize this row — transfer detection must win anyway.
+        ctx.ClassificationRules.Add(new ClassificationRule
+        {
+            Pattern = "Landlord",
+            CategoryId = rent.Id,
+            Status = ClassificationRuleStatus.Auto,
+        });
+        ctx.BankAccounts.Add(new BankAccount { BankName = "dkb", DisplayName = "Tagesgeld", Iban = "DE11111100000000" });
+        ctx.SaveChanges();
+        ImportService svc = CreateService(ctx);
+
+        await svc.ImportFileAsync(CreateTempCsv(DkbTwoRows), "export.csv", null);
+
+        Transaction landlord = ctx.Transactions.Single(t => t.CounterpartyName == "Landlord GmbH");
+        Assert.Equal(ClassificationStatus.InternalTransfer, landlord.ClassificationStatus);
+        Assert.Null(landlord.CategoryId);
+
+        // Unrelated row is unaffected and still gets classified normally.
+        Transaction rewe = ctx.Transactions.Single(t => t.CounterpartyName == "REWE SAGT DANKE");
+        Assert.Equal(ClassificationStatus.NeedsReview, rewe.ClassificationStatus);
     }
 
     public void Dispose()

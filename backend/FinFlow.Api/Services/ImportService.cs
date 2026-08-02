@@ -18,7 +18,11 @@ public record ImportFileResult(
 /// parse, skip duplicates via DedupeHash, classify against the DB rules
 /// (first match wins, like the CLI's Classifier), and persist as an ImportBatch.
 /// </summary>
-public class ImportService(AppDbContext db, ClassificationService classification, ContractService contracts)
+public class ImportService(
+    AppDbContext db,
+    ClassificationService classification,
+    ContractService contracts,
+    TransferDetectionService transfers)
 {
     private readonly ParserRegistry _registry = new();
 
@@ -51,6 +55,7 @@ public class ImportService(AppDbContext db, ClassificationService classification
         }
 
         RuleSet rules = classification.LoadRuleSet();
+        HashSet<string> ownIbans = await transfers.GetOwnIbansAsync();
         ImportBatch batch = new()
         {
             SourceFileName = fileName,
@@ -66,7 +71,19 @@ public class ImportService(AppDbContext db, ClassificationService classification
             string hash = Transaction.ComputeDedupeHash(lt.SourceBank, lt.BookingDate, lt.Amount, lt.CounterpartyName, lt.Purpose);
             if (!knownHashes.Add(hash)) { duplicates++; continue; }
 
-            (int? categoryId, ClassificationStatus status) = rules.Classify(lt.CounterpartyName, lt.Purpose);
+            int? categoryId;
+            ClassificationStatus status;
+            if (TransferDetectionService.IsInternalTransfer(ownIbans, lt.CounterpartyIban))
+            {
+                // Takes priority over rule-based classification — a transfer between the
+                // user's own accounts should never pick up a merchant category.
+                categoryId = null;
+                status = ClassificationStatus.InternalTransfer;
+            }
+            else
+            {
+                (categoryId, status) = rules.Classify(lt.CounterpartyName, lt.Purpose);
+            }
             Transaction transaction = new()
             {
                 ImportBatch = batch,

@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { SILENT_ERRORS } from './api-error.interceptor';
 import {
   AnalyzeResponse,
+  BankAccountDto,
   CategoryBreakdown,
   CategoryDto,
   ClassificationStatus,
@@ -48,6 +49,12 @@ export interface ContractRequest {
   amountTolerance: number;
   categoryId: number | null;
   isActive: boolean;
+}
+
+export interface BankAccountRequest {
+  bankName: string;
+  displayName: string | null;
+  iban: string;
 }
 
 /** Typed client for the FinFlow API. All URLs are relative — the dev server
@@ -200,6 +207,24 @@ export class ApiService {
 
   updateSettings(req: { autoBackupEnabled: boolean }): Observable<SettingsDto> {
     return this.http.put<SettingsDto>('/api/settings/', req);
+  }
+
+  // --- accounts ---
+
+  getAccounts(): Observable<BankAccountDto[]> {
+    return this.http.get<BankAccountDto[]>('/api/accounts/');
+  }
+
+  createAccount(req: BankAccountRequest): Observable<BankAccountDto> {
+    return this.http.post<BankAccountDto>('/api/accounts/', req);
+  }
+
+  updateAccount(id: number, req: BankAccountRequest): Observable<BankAccountDto> {
+    return this.http.put<BankAccountDto>(`/api/accounts/${id}`, req);
+  }
+
+  deleteAccount(id: number): Observable<unknown> {
+    return this.http.delete(`/api/accounts/${id}`);
   }
 
   private toParams(filter: TransactionFilter, extra: Record<string, unknown>): HttpParams {

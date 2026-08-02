@@ -6,4 +6,5 @@ public enum ClassificationStatus
     NeedsReview,
     Ignored,
     ManualOverride,
+    InternalTransfer,
 }

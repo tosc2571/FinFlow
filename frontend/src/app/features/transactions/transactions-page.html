@@ -89,6 +89,9 @@
             @if (t.classificationStatus !== 'Ignored') {
               <button title="Ignore" (click)="setStatus(t, 'Ignored')">🚫</button>
             }
+            @if (t.classificationStatus !== 'InternalTransfer') {
+              <button title="Mark as internal transfer between own accounts" (click)="setStatus(t, 'InternalTransfer')">↔️</button>
+            }
             @if (t.contractId === null) {
               <button title="Create contract from this transaction" (click)="createContract(t)">🔁</button>
             }
