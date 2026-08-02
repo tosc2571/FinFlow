@@ -36,10 +36,11 @@ public class HvbKreditkarteCsvParserTests : CsvParserTestBase
 
     /// <summary>
     /// DKB's and HVB's credit card exports share a byte-identical header (same processor
-    /// format on both banks' side) — CanParse legitimately can't distinguish them, so this
-    /// documents the ambiguity as a known, tested fact rather than a silent gap. Auto-detect
-    /// (ParserRegistry.Detect) resolves to whichever parser is registered first; importing an
-    /// HVB card file relies on the explicit bank hint (DetectWithHint) to pick the right one.
+    /// format on both banks' side) — CanParse legitimately can't distinguish them at the
+    /// individual-parser level, so this documents the ambiguity as a known, tested fact rather
+    /// than a silent gap. ParserRegistryTests covers the registry-level behavior this implies:
+    /// Detect reports such a file as unrecognized rather than guessing, and importing an HVB
+    /// card file relies on the explicit bank hint (DetectWithHint) to pick the right one.
     /// </summary>
     [Fact]
     public void CanParse_DkbKreditkarteHeader_AlsoMatches_KnownAmbiguity()
