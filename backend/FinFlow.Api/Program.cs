@@ -28,6 +28,8 @@ builder.Services.AddScoped<ClassificationService>();
 builder.Services.AddScoped<ImportService>();
 builder.Services.AddScoped<DashboardService>();
 builder.Services.AddScoped<ContractService>();
+builder.Services.AddHostedService(sp =>
+    new PeriodicBackupService(resolvedDbPath, sp.GetRequiredService<ILogger<PeriodicBackupService>>()));
 builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddEndpointsApiExplorer();

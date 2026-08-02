@@ -78,6 +78,52 @@ public class DatabaseBackupTests : IDisposable
         Assert.Equal(2, Directory.GetFiles(Path.Combine(_dir, "backups")).Length);
     }
 
+    [Fact]
+    public void BackupIfNeeded_NextDay_NoChangeSinceLastBackup_SkipsBackup()
+    {
+        File.WriteAllText(_dbPath, "unchanged");
+        DateOnly day1 = new(2026, 7, 20);
+        DatabaseBackup.BackupIfNeeded(_dbPath, NullLogger.Instance, day1);
+
+        // No write to _dbPath happens here — the database is genuinely unchanged.
+        DateOnly day2 = day1.AddDays(1);
+        DatabaseBackup.BackupIfNeeded(_dbPath, NullLogger.Instance, day2);
+
+        Assert.True(File.Exists(BackupPath(day1)));
+        Assert.False(File.Exists(BackupPath(day2)));
+        Assert.Single(Directory.GetFiles(Path.Combine(_dir, "backups")));
+    }
+
+    [Fact]
+    public void BackupIfNeeded_MoreThanMaxBackups_PrunesOldestKeepingOnlyTheMostRecent()
+    {
+        File.WriteAllText(_dbPath, "content");
+        DateOnly today = new(2026, 7, 20);
+        string backupsDir = Path.Combine(_dir, "backups");
+        Directory.CreateDirectory(backupsDir);
+
+        // Simulate a backlog of 12 pre-existing backups (e.g. accumulated before automatic
+        // pruning existed), with strictly increasing write times, oldest to newest — including
+        // today's, so BackupIfNeeded takes the "already backed up today" prune-only path.
+        string[] paths = new string[12];
+        for (int i = 0; i < 12; i++)
+        {
+            DateOnly date = today.AddDays(-11 + i);
+            string path = Path.Combine(backupsDir, $"finflow-{date:yyyy-MM-dd}.db");
+            File.WriteAllText(path, "backup");
+            File.SetLastWriteTimeUtc(path, new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddDays(i));
+            paths[i] = path;
+        }
+
+        DatabaseBackup.BackupIfNeeded(_dbPath, NullLogger.Instance, today);
+
+        Assert.Equal(DatabaseBackup.MaxBackups, Directory.GetFiles(backupsDir).Length);
+        Assert.False(File.Exists(paths[0])); // oldest two pruned
+        Assert.False(File.Exists(paths[1]));
+        for (int i = 2; i < 12; i++)
+            Assert.True(File.Exists(paths[i]), $"backup {i} (newer) should have been kept");
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_dir)) Directory.Delete(_dir, recursive: true);
