@@ -3,6 +3,7 @@ import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService, RuleRequest } from '../../core/api.service';
+import { onEnterSubmit } from '../../shared/keyboard';
 import { CategoryDto, PatternTestResult, ReclassifyResult, RuleDto, RuleStatus } from '../../shared/models';
 
 @Component({
@@ -14,6 +15,10 @@ export class RulesPage {
   private api = inject(ApiService);
   private router = inject(Router);
   private testTimer: ReturnType<typeof setTimeout> | null = null;
+
+  protected onToolbarEnter(event: Event): void {
+    onEnterSubmit(event, () => this.save());
+  }
 
   /** Sentinel option value for the category <select>'s "manage categories" entry — distinct
    * from any real category id (number) or the empty "— choose —" placeholder. */

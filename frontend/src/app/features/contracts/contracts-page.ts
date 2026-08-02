@@ -2,6 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService, ContractRequest } from '../../core/api.service';
+import { onEnterSubmit } from '../../shared/keyboard';
 import {
   CategoryDto,
   ContractDetail,
@@ -19,6 +20,10 @@ import {
 })
 export class ContractsPage {
   private api = inject(ApiService);
+
+  protected onToolbarEnter(event: Event): void {
+    onEnterSubmit(event, () => this.save());
+  }
 
   protected readonly periods: ContractPeriod[] = ['Monthly', 'Quarterly', 'SemiAnnually', 'Annually'];
   protected readonly periodLabels = PERIOD_LABELS;

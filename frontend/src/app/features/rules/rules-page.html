@@ -2,21 +2,20 @@
 
 <div class="panel">
   <h2>{{ editingId === null ? 'New rule' : 'Edit rule #' + editingId }}</h2>
-  <form class="toolbar" (ngSubmit)="save()">
+  <div class="toolbar" (keydown.enter)="onToolbarEnter($event)">
     <label style="flex: 1">
       Pattern (regex)
       <input
         type="text"
         style="flex: 1"
         [(ngModel)]="pattern"
-        name="pattern"
         (ngModelChange)="onPatternInput()"
         placeholder="e.g. REWE|ALDI|LIDL"
       />
     </label>
     <label>
       Category
-      <select [ngModel]="categoryId" name="categoryId" (ngModelChange)="onCategoryChange($event)">
+      <select [ngModel]="categoryId" (ngModelChange)="onCategoryChange($event)">
         <option value="">— choose —</option>
         @for (c of categories(); track c.id) {
           <option [ngValue]="c.id">{{ c.name }}</option>
@@ -26,21 +25,21 @@
     </label>
     <label>
       Status
-      <select [(ngModel)]="status" name="status">
+      <select [(ngModel)]="status">
         <option value="Auto">Auto</option>
         <option value="NeedsReview">Needs review</option>
         <option value="Ignore">Ignore</option>
       </select>
     </label>
-    <label>Priority <input type="number" [(ngModel)]="priority" name="priority" style="width: 5rem" /></label>
-    <label><input type="checkbox" [(ngModel)]="isActive" name="isActive" /> active</label>
-    <button type="submit" class="primary" [disabled]="!canSave">
+    <label>Priority <input type="number" [(ngModel)]="priority" style="width: 5rem" /></label>
+    <label><input type="checkbox" [(ngModel)]="isActive" /> active</label>
+    <button class="primary" [disabled]="!canSave" (click)="save()">
       {{ editingId === null ? 'Create' : 'Save' }}
     </button>
     @if (editingId !== null) {
-      <button type="button" (click)="resetForm()">Cancel</button>
+      <button (click)="resetForm()">Cancel</button>
     }
-  </form>
+  </div>
 
   @if (testError(); as err) {
     <p class="badge failed">{{ err }}</p>

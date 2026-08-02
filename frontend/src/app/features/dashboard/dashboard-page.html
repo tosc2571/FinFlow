@@ -1,9 +1,9 @@
 <h1>Dashboard</h1>
 
-<form class="toolbar" (ngSubmit)="load()">
-  <label>Year <input type="number" [(ngModel)]="year" name="year" style="width: 5.5rem" /></label>
-  <button type="submit" class="primary">Apply</button>
-</form>
+<div class="toolbar" (keydown.enter)="onToolbarEnter($event)">
+  <label>Year <input type="number" [(ngModel)]="year" style="width: 5.5rem" /></label>
+  <button class="primary" (click)="load()">Apply</button>
+</div>
 
 @if (summary(); as s) {
   <div class="cards">

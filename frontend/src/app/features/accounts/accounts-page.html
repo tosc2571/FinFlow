@@ -2,19 +2,19 @@
 
 <div class="panel">
   <h2>{{ editingId === null ? 'New account' : 'Edit account #' + editingId }}</h2>
-  <form class="toolbar" (ngSubmit)="save()">
-    <label>Bank <input type="text" [(ngModel)]="bankName" name="bankName" placeholder="e.g. ING" /></label>
-    <label>Display name <input type="text" [(ngModel)]="displayName" name="displayName" placeholder="e.g. Tagesgeld" /></label>
+  <div class="toolbar" (keydown.enter)="onToolbarEnter($event)">
+    <label>Bank <input type="text" [(ngModel)]="bankName" placeholder="e.g. ING" /></label>
+    <label>Display name <input type="text" [(ngModel)]="displayName" placeholder="e.g. Tagesgeld" /></label>
     <label style="flex: 1">
-      IBAN <input type="text" style="flex: 1" [(ngModel)]="iban" name="iban" placeholder="DE12 3456 7890 1234 5678 90" />
+      IBAN <input type="text" style="flex: 1" [(ngModel)]="iban" placeholder="DE12 3456 7890 1234 5678 90" />
     </label>
-    <button type="submit" class="primary" [disabled]="!bankName.trim() || !iban.trim()">
+    <button class="primary" [disabled]="!bankName.trim() || !iban.trim()" (click)="save()">
       {{ editingId === null ? 'Create' : 'Save' }}
     </button>
     @if (editingId !== null) {
-      <button type="button" (click)="resetForm()">Cancel</button>
+      <button (click)="resetForm()">Cancel</button>
     }
-  </form>
+  </div>
   <p class="muted">
     Register your own accounts here (even ones across different banks) so transfers between them
     are recognized automatically and excluded from income/expense statistics — see the

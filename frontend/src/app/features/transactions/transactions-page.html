@@ -1,11 +1,11 @@
 <h1>Transactions</h1>
 
-<form class="toolbar" (ngSubmit)="load(1)">
-  <label>Year <input type="number" [(ngModel)]="year" name="year" style="width: 5.5rem" /></label>
-  <label>Search <input type="text" [(ngModel)]="contains" name="contains" placeholder="purpose or counterparty" /></label>
+<div class="toolbar" (keydown.enter)="onToolbarEnter($event)">
+  <label>Year <input type="number" [(ngModel)]="year" style="width: 5.5rem" /></label>
+  <label>Search <input type="text" [(ngModel)]="contains" placeholder="purpose or counterparty" /></label>
   <label>
     Bank
-    <select [(ngModel)]="bank" name="bank">
+    <select [(ngModel)]="bank">
       <option value="">all</option>
       <option value="dkb">dkb</option>
       <option value="ing">ing</option>
@@ -17,7 +17,7 @@
   </label>
   <label>
     Status
-    <select [(ngModel)]="status" name="status">
+    <select [(ngModel)]="status">
       <option value="">all</option>
       @for (s of statuses; track s) {
         <option [value]="s">{{ statusLabels[s] }}</option>
@@ -26,7 +26,7 @@
   </label>
   <label>
     Category
-    <select [(ngModel)]="categoryId" name="categoryId">
+    <select [(ngModel)]="categoryId">
       <option value="">all</option>
       @for (c of categories(); track c.id) {
         <option [ngValue]="c.id">{{ c.name }}</option>
@@ -35,19 +35,19 @@
   </label>
   <label>
     Sort
-    <select [(ngModel)]="sort" name="sort">
+    <select [(ngModel)]="sort">
       <option value="date">Date ↑</option>
       <option value="date-desc">Date ↓</option>
       <option value="amount">Amount ↑</option>
       <option value="amount-desc">Amount ↓</option>
     </select>
   </label>
-  <button type="submit" class="primary">Apply</button>
-  <button type="button" (click)="showNeedsReview()">Needs review</button>
+  <button class="primary" (click)="load(1)">Apply</button>
+  <button (click)="showNeedsReview()">Needs review</button>
   <span style="flex: 1"></span>
-  <a [href]="exportUrl('xlsx')" download><button type="button">Export XLSX</button></a>
-  <a [href]="exportUrl('csv')" download><button type="button">Export CSV</button></a>
-</form>
+  <a [href]="exportUrl('xlsx')" download><button>Export XLSX</button></a>
+  <a [href]="exportUrl('csv')" download><button>Export CSV</button></a>
+</div>
 
 @if (data(); as d) {
   <div class="table-scroll">
