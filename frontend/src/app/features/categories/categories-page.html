@@ -2,26 +2,26 @@
 
 <div class="panel">
   <h2>{{ editingId === null ? 'New category' : 'Edit category #' + editingId }}</h2>
-  <div class="toolbar">
-    <label>Name <input type="text" [(ngModel)]="name" placeholder="e.g. Spenden" /></label>
+  <form class="toolbar" (ngSubmit)="save()">
+    <label>Name <input type="text" [(ngModel)]="name" name="name" placeholder="e.g. Spenden" /></label>
     <label>
       Parent
-      <select [(ngModel)]="parentCategoryId">
+      <select [(ngModel)]="parentCategoryId" name="parentCategoryId">
         <option value="">— none —</option>
         @for (c of parentOptions(); track c.id) {
           <option [ngValue]="c.id">{{ c.name }}</option>
         }
       </select>
     </label>
-    <label><input type="checkbox" [(ngModel)]="isIncome" /> income</label>
-    <label>Sort <input type="number" [(ngModel)]="sortOrder" style="width: 4.5rem" /></label>
-    <button class="primary" [disabled]="!name.trim()" (click)="save()">
+    <label><input type="checkbox" [(ngModel)]="isIncome" name="isIncome" /> income</label>
+    <label>Sort <input type="number" [(ngModel)]="sortOrder" name="sortOrder" style="width: 4.5rem" /></label>
+    <button type="submit" class="primary" [disabled]="!name.trim()">
       {{ editingId === null ? 'Create' : 'Save' }}
     </button>
     @if (editingId !== null) {
-      <button (click)="resetForm()">Cancel</button>
+      <button type="button" (click)="resetForm()">Cancel</button>
     }
-  </div>
+  </form>
   <p class="muted">
     Tip: category names like Spenden, Kinderbetreuung, Kirchensteuer map directly to German tax-return line items —
     see rules.example.json in the repo for a starting taxonomy.

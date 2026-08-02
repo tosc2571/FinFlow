@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { ApiService, RuleRequest } from '../../core/api.service';
 import { CategoryDto, PatternTestResult, ReclassifyResult, RuleDto, RuleStatus } from '../../shared/models';
 
@@ -11,7 +12,12 @@ import { CategoryDto, PatternTestResult, ReclassifyResult, RuleDto, RuleStatus }
 })
 export class RulesPage {
   private api = inject(ApiService);
+  private router = inject(Router);
   private testTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /** Sentinel option value for the category <select>'s "manage categories" entry — distinct
+   * from any real category id (number) or the empty "— choose —" placeholder. */
+  protected readonly manageCategoriesOption = '__manage__';
 
   protected readonly rules = signal<RuleDto[]>([]);
   protected readonly categories = signal<CategoryDto[]>([]);
@@ -59,6 +65,14 @@ export class RulesPage {
         this.testError.set(err?.error?.error ?? 'Pattern test failed.');
       },
     });
+  }
+
+  protected onCategoryChange(value: number | string): void {
+    if (value === this.manageCategoriesOption) {
+      this.router.navigate(['/categories']);
+      return;
+    }
+    this.categoryId = value as number | '';
   }
 
   protected edit(rule: RuleDto): void {
