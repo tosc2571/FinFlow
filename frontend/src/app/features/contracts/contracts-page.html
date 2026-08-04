@@ -19,7 +19,7 @@
 
 <div class="panel">
   <h2>{{ editingId === null ? 'New contract' : 'Edit contract #' + editingId }}</h2>
-  <div class="toolbar" (keydown.enter)="onToolbarEnter($event)">
+  <div class="toolbar" (keyup.enter)="onToolbarEnter($event)">
     <label>Name <input type="text" [(ngModel)]="name" placeholder="e.g. Rent" /></label>
     <label>Amount <input type="number" step="0.01" [(ngModel)]="nominalAmount" style="width: 7rem" /></label>
     <label>

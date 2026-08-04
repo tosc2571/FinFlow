@@ -2,7 +2,7 @@
 
 <div class="panel">
   <h2>{{ editingId === null ? 'New account' : 'Edit account #' + editingId }}</h2>
-  <div class="toolbar" (keydown.enter)="onToolbarEnter($event)">
+  <div class="toolbar" (keyup.enter)="onToolbarEnter($event)">
     <label>Bank <input type="text" [(ngModel)]="bankName" placeholder="e.g. ING" /></label>
     <label>Display name <input type="text" [(ngModel)]="displayName" placeholder="e.g. Tagesgeld" /></label>
     <label style="flex: 1">

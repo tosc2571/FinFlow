@@ -2,7 +2,7 @@
 
 <div class="panel">
   <h2>{{ editingId === null ? 'New rule' : 'Edit rule #' + editingId }}</h2>
-  <div class="toolbar" (keydown.enter)="onToolbarEnter($event)">
+  <div class="toolbar" (keyup.enter)="onToolbarEnter($event)">
     <label style="flex: 1">
       Pattern (regex)
       <input
