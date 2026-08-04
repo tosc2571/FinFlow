@@ -15,9 +15,9 @@ description: Build the FinFlow solution and run its xUnit test suite, then repor
 4. If tests fail, do not attempt a fix unless asked — report first.
 
 Notes specific to this repo:
-- Solution layout: `backend/FinFlow.Core` (library — parsers, classifier,
-  export), `backend/FinFlow.Cli` (thin console entry point, references
-  Core), `backend/FinFlow.Tests` (xUnit, references Core).
+- Solution layout: `backend/FinFlow.Core` (library — parsers, export),
+  `backend/FinFlow.Api` (ASP.NET Core + EF Core, references Core),
+  `backend/FinFlow.Tests` (xUnit, references Core and Api).
 - No network calls or external services are involved — all parsing/export
   is local file I/O, so there's no fake-handler pattern to worry about.
 - Run `dotnet test --filter "ClassName=FinFlow.Tests.HvbCsvParserTests"` to

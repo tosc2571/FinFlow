@@ -3,7 +3,7 @@ using FinFlow.Parsing;
 namespace FinFlow;
 
 /// <summary>
-/// Knows every parser. Picks the right one either by name (--bank) or by auto-detection.
+/// Knows every parser. Picks the right one either by an explicit override or by auto-detection.
 /// New bank? Add it to the list here (more specific formats first).
 /// </summary>
 public sealed class ParserRegistry

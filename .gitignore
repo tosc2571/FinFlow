@@ -4,9 +4,6 @@ obj/
 *.user
 *.suo
 
-# Real classification rules contain personal vendor/pattern data — never commit
-backend/FinFlow.Cli/rules.json
-
 # Local SQLite database files — schema lives in FinFlow.Api/Migrations, not the .db file itself
 *.db
 *.db-shm
