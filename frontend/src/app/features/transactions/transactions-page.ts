@@ -1,7 +1,9 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { ApiService } from '../../core/api.service';
+import { onEnterSubmit } from '../../shared/keyboard';
 import {
   CategoryDto,
   ClassificationStatus,
@@ -18,6 +20,15 @@ import {
 })
 export class TransactionsPage {
   private api = inject(ApiService);
+  private router = inject(Router);
+
+  protected onToolbarEnter(event: Event): void {
+    onEnterSubmit(event, () => this.load(1));
+  }
+
+  /** Sentinel option value for the per-row category <select>'s "manage categories" entry —
+   * distinct from any real category id (number) or null (clear category). */
+  protected readonly manageCategoriesOption = '__manage__';
 
   protected readonly statusLabels = STATUS_LABELS;
   protected readonly statuses: ClassificationStatus[] = [
@@ -79,6 +90,10 @@ export class TransactionsPage {
   }
 
   protected setCategory(t: TransactionDto, value: string): void {
+    if (value === this.manageCategoriesOption) {
+      this.router.navigate(['/categories']);
+      return;
+    }
     const categoryId = value === '' ? null : Number(value);
     this.api.patchTransaction(t.id, { categoryId }).subscribe(() => this.load(this.data()?.page ?? 1));
   }

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { ChartConfiguration } from 'chart.js';
 import { ApiService } from '../../core/api.service';
 import { ChartComponent } from '../../shared/chart';
+import { onEnterSubmit } from '../../shared/keyboard';
 import { CategoryBreakdown, DashboardSummary, MonthForecast, MonthlyTrend } from '../../shared/models';
 
 // Validated reference palette: diverging blue/red pair for polarity (income vs. expenses).
@@ -17,6 +18,10 @@ const NEGATIVE = '#e34948';
 })
 export class DashboardPage {
   private api = inject(ApiService);
+
+  protected onToolbarEnter(event: Event): void {
+    onEnterSubmit(event, () => this.load());
+  }
 
   protected year: number | null = new Date().getFullYear();
 

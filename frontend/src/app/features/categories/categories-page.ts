@@ -1,6 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ApiService, CategoryRequest } from '../../core/api.service';
+import { onEnterSubmit } from '../../shared/keyboard';
 import { CategoryDto } from '../../shared/models';
 
 @Component({
@@ -10,6 +11,10 @@ import { CategoryDto } from '../../shared/models';
 })
 export class CategoriesPage {
   private api = inject(ApiService);
+
+  protected onToolbarEnter(event: Event): void {
+    onEnterSubmit(event, () => this.save());
+  }
 
   protected readonly categories = signal<CategoryDto[]>([]);
 

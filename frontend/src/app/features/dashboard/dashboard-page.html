@@ -1,6 +1,6 @@
 <h1>Dashboard</h1>
 
-<div class="toolbar">
+<div class="toolbar" (keyup.enter)="onToolbarEnter($event)">
   <label>Year <input type="number" [(ngModel)]="year" style="width: 5.5rem" /></label>
   <button class="primary" (click)="load()">Apply</button>
 </div>

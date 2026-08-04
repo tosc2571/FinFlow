@@ -2,7 +2,7 @@
 
 <div class="panel">
   <h2>{{ editingId === null ? 'New rule' : 'Edit rule #' + editingId }}</h2>
-  <div class="toolbar">
+  <div class="toolbar" (keyup.enter)="onToolbarEnter($event)">
     <label style="flex: 1">
       Pattern (regex)
       <input
@@ -15,11 +15,12 @@
     </label>
     <label>
       Category
-      <select [(ngModel)]="categoryId">
+      <select [ngModel]="categoryId" (ngModelChange)="onCategoryChange($event)">
         <option value="">— choose —</option>
         @for (c of categories(); track c.id) {
           <option [ngValue]="c.id">{{ c.name }}</option>
         }
+        <option [ngValue]="manageCategoriesOption">→ Manage categories…</option>
       </select>
     </label>
     <label>

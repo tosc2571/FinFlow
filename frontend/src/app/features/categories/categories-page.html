@@ -2,7 +2,7 @@
 
 <div class="panel">
   <h2>{{ editingId === null ? 'New category' : 'Edit category #' + editingId }}</h2>
-  <div class="toolbar">
+  <div class="toolbar" (keyup.enter)="onToolbarEnter($event)">
     <label>Name <input type="text" [(ngModel)]="name" placeholder="e.g. Spenden" /></label>
     <label>
       Parent

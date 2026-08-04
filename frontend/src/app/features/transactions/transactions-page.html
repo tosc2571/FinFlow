@@ -1,6 +1,6 @@
 <h1>Transactions</h1>
 
-<div class="toolbar">
+<div class="toolbar" (keyup.enter)="onToolbarEnter($event)">
   <label>Year <input type="number" [(ngModel)]="year" style="width: 5.5rem" /></label>
   <label>Search <input type="text" [(ngModel)]="contains" placeholder="purpose or counterparty" /></label>
   <label>
@@ -78,6 +78,7 @@
               @for (c of categories(); track c.id) {
                 <option [ngValue]="c.id">{{ c.name }}</option>
               }
+              <option [ngValue]="manageCategoriesOption">→ Manage categories…</option>
             </select>
           </td>
           <td>
