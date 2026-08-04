@@ -16,6 +16,8 @@ import {
   ImportFileResult,
   MonthForecast,
   MonthlyTrend,
+  NoteDetailDto,
+  NoteSummaryDto,
   PagedTransactions,
   PatternTestResult,
   ReclassifyResult,
@@ -225,6 +227,28 @@ export class ApiService {
 
   deleteAccount(id: number): Observable<unknown> {
     return this.http.delete(`/api/accounts/${id}`);
+  }
+
+  // --- notes ---
+
+  getNotes(): Observable<NoteSummaryDto[]> {
+    return this.http.get<NoteSummaryDto[]>('/api/notes/');
+  }
+
+  getNote(name: string): Observable<NoteDetailDto> {
+    return this.http.get<NoteDetailDto>(`/api/notes/${encodeURIComponent(name)}`);
+  }
+
+  createNote(name: string, content: string): Observable<NoteDetailDto> {
+    return this.http.post<NoteDetailDto>('/api/notes/', { name, content });
+  }
+
+  updateNote(name: string, content: string): Observable<NoteDetailDto> {
+    return this.http.put<NoteDetailDto>(`/api/notes/${encodeURIComponent(name)}`, { content });
+  }
+
+  deleteNote(name: string): Observable<unknown> {
+    return this.http.delete(`/api/notes/${encodeURIComponent(name)}`);
   }
 
   private toParams(filter: TransactionFilter, extra: Record<string, unknown>): HttpParams {

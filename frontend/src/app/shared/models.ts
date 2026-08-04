@@ -208,3 +208,14 @@ export interface BankAccountDto {
   displayName: string | null;
   iban: string;
 }
+
+export interface NoteSummaryDto {
+  name: string;
+  updatedAt: string;
+}
+
+export interface NoteDetailDto {
+  name: string;
+  content: string;
+  updatedAt: string;
+}

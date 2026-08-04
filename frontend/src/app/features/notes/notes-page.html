@@ -1,0 +1,38 @@
+<h1>Notes</h1>
+
+<div class="notes-layout">
+  <div class="notes-list">
+    @for (n of notes(); track n.name) {
+      <button [class.active]="n.name === selectedName()" (click)="select(n)">{{ n.name }}</button>
+    } @empty {
+      <p class="muted" style="padding: 0.75rem">No notes yet — create one below.</p>
+    }
+  </div>
+
+  <div class="notes-editor">
+    @if (selectedName(); as name) {
+      <div class="toolbar">
+        <h2 style="margin: 0; flex: 1">{{ name }}</h2>
+        <button [class.primary]="mode() === 'edit'" (click)="showEdit()">Edit</button>
+        <button [class.primary]="mode() === 'preview'" (click)="showPreview()">Preview</button>
+        <button class="primary" (click)="save()">Save</button>
+        <button class="danger" (click)="delete()">Delete</button>
+      </div>
+
+      @if (mode() === 'edit') {
+        <textarea [(ngModel)]="content" spellcheck="false"></textarea>
+      } @else {
+        <div class="markdown-preview" [innerHTML]="renderedHtml()"></div>
+      }
+    } @else {
+      <p class="muted">Select a note on the left, or create a new one below.</p>
+    }
+
+    <div class="toolbar" (keyup.enter)="onNewNoteEnter($event)" style="margin-top: 1rem">
+      <label style="flex: 1">
+        New note <input type="text" style="flex: 1" [(ngModel)]="newNoteName" placeholder="e.g. Investment strategy" />
+      </label>
+      <button class="primary" [disabled]="!newNoteName.trim()" (click)="createNote()">Create</button>
+    </div>
+  </div>
+</div>
