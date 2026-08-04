@@ -229,6 +229,93 @@ button.danger {
   background: #f2f7fd;
 }
 
+/* --- notes --- */
+
+.notes-layout {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.notes-list {
+  flex: 0 0 220px;
+  background: #fcfcfb;
+  border: 1px solid #e1e0d9;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.notes-list button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  border-radius: 0;
+  border-bottom: 1px solid #e1e0d9;
+  background: transparent;
+}
+
+.notes-list button:last-child {
+  border-bottom: none;
+}
+
+.notes-list button.active {
+  background: #e3edf9;
+  font-weight: 600;
+}
+
+.notes-editor {
+  flex: 1;
+  min-width: 0;
+}
+
+.notes-editor textarea {
+  width: 100%;
+  min-height: 60vh;
+  font-family: ui-monospace, Consolas, monospace;
+  resize: vertical;
+}
+
+.markdown-preview {
+  background: #fcfcfb;
+  border: 1px solid #e1e0d9;
+  border-radius: 8px;
+  padding: 1rem 1.5rem;
+  min-height: 60vh;
+}
+
+.markdown-preview :first-child {
+  margin-top: 0;
+}
+
+.markdown-preview h1 {
+  font-size: 1.6rem;
+}
+
+.markdown-preview h2 {
+  font-size: 1.3rem;
+}
+
+.markdown-preview code {
+  background: #f0efec;
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+}
+
+.markdown-preview pre {
+  background: #f0efec;
+  padding: 0.75rem;
+  border-radius: 6px;
+  overflow-x: auto;
+}
+
+.markdown-preview blockquote {
+  margin: 0;
+  padding-left: 1rem;
+  border-left: 3px solid #c3c2b7;
+  color: #52514e;
+}
+
 /* --- pagination --- */
 
 .pager {
