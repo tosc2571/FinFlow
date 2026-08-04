@@ -1,6 +1,6 @@
 # FinFlow
 
-Self-hosted web app (plus a standalone CLI) that parses German bank CSV exports, classifies transactions for your Steuererklärung (tax return) and household budget, and exports a color-coded Excel workbook.
+Self-hosted web app that parses German bank CSV exports, classifies transactions for your Steuererklärung (tax return) and household budget, and exports a color-coded Excel workbook.
 
 Supported banks: **DKB** (checking + credit card), **ING**, **HVB** (checking + credit card), **Trade Republic**, **Postbank**, **Berliner Volksbank**.
 
@@ -18,13 +18,9 @@ Supported banks: **DKB** (checking + credit card), **ING**, **HVB** (checking + 
 - Dashboard: income/expenses/net summary, monthly trend, per-category breakdown, and a multi-month forecast driven by your contracts.
 - Contracts: track recurring payments (rent, insurance, salary, subscriptions) by period and due date. Expected amounts are a rolling average of recent matched payments rather than a fixed value, so fluctuating income (bonuses, overtime) doesn't trigger false deviations. Missing or off-amount payments are surfaced for review, not silently ignored. Create one from scratch or from an existing transaction with one click.
 - Accounts: register your own bank accounts (by IBAN) so money moved between them — even across different banks — is recognized as an internal transfer and excluded from income/expense statistics, instead of inflating both sides as fake spending and earning.
-- XLSX/CSV export honoring the current filter — the XLSX is the same tax-return workbook the CLI produces.
+- XLSX/CSV export honoring the current filter.
 
-**CLI** (stateless — no database, reads CSVs fresh on every run):
-
-- Parse, filter (date/amount/text), print as table/CSV/JSON, and export the tax workbook driven by a local `rules.json`.
-
-**Shared parsing engine:**
+**Parsing engine:**
 
 - Auto-detects encoding (UTF-8, UTF-16, Windows-1252 fallback), delimiter (`;`, `,`, tab, `|`), header row position, decimal format (`1.234,56` and `1,234.56`), and date format — no manual configuration per file.
 
@@ -117,51 +113,19 @@ docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
 
 ---
 
-## Getting started (CLI)
-
-The CLI works without the web app or database — useful for a quick one-off tax export:
-
-```bash
-# 1. Personalize the classification rules (the shipped file is a generic template)
-cp backend/FinFlow.Cli/rules.example.json backend/FinFlow.Cli/rules.json
-
-# 2. Run against a folder of CSV exports (mixing banks is fine — auto-detected per file)
-dotnet run --project backend/FinFlow.Cli -- --dir ./my-exports --year 2025 --export taxes-2025.xlsx
-
-# Or try it immediately against the bundled synthetic sample data:
-dotnet run --project backend/FinFlow.Cli -- --dir ./samples --year 2025 --export sample-export.xlsx --rules backend/FinFlow.Cli/rules.example.json
-```
-
-### CLI reference
-
-```
-Input:    -f/--file <path> (repeatable) | -d/--dir <folder>
-          -b/--bank <dkb|ing|hvb|traderepublic|postbank|volksbank|auto>
-              Applies to all following --file arguments (sticky).
-              Set before --dir: applies to every file in the folder.
-Filter:   --from <yyyy-MM-dd> | --to <yyyy-MM-dd> | -y/--year <yyyy>
-          --min <n> | --max <n> | -c/--contains <text> | --counterparty <text>
-Output:   --sort <date|date-desc|amount|amount-desc> | --format <table|csv|json>
-          -e/--export <file.xlsx> | -r/--rules <rules.json>
-          -h/--help
-```
-
----
-
 ## Architecture
 
 ```
                       ┌────────────────────┐
-CSV (DKB) ─┐          │ FinFlow.Core       │        ┌─ FinFlow.Cli ── rules.json ──► taxes-2025.xlsx
-CSV (ING) ─┼─► parse ─│ parsers/classifier │─► use ─┤
-CSV (…)   ─┘          │ filter/export      │        └─ FinFlow.Api ── SQLite ◄──► Angular frontend
+CSV (DKB) ─┐          │ FinFlow.Core       │
+CSV (ING) ─┼─► parse ─│ parsers, XLSX/CSV  │─► use ─► FinFlow.Api ── SQLite ◄──► Angular frontend
+CSV (…)   ─┘          │ export             │
                       └────────────────────┘
 ```
 
 | Project/Folder | Responsibility |
 |---|---|
-| `backend/FinFlow.Core` | Parsers, classifier, filter, XLSX/CSV export — plain class library, no CLI/ASP.NET/EF references |
-| `backend/FinFlow.Cli` | Thin, stateless CLI entry point (`Program.cs` + `rules.example.json`) |
+| `backend/FinFlow.Core` | Parsers, XLSX/CSV export — plain class library, no ASP.NET/EF references |
 | `backend/FinFlow.Api` | REST API: EF Core + SQLite persistence, import pipeline (parse → dedupe → classify → persist), rules/categories/contracts/dashboard/export endpoints, Swagger in dev |
 | `backend/FinFlow.Tests` | xUnit tests for parsers, data layer, import pipeline, filters, dashboard aggregates, contract matching/forecast |
 | `frontend/` | Angular 21 SPA (standalone components, zoneless) — import wizard, transactions, rules, categories, contracts, dashboard; dev server proxies `/api` to the backend |
@@ -181,20 +145,17 @@ Adding a new bank means writing one new parser class — see [Adding a new bank 
 5. Register the new parser in `ParserRegistry`.
 6. Add a matching test class in `backend/FinFlow.Tests` — see [backend/FinFlow.Tests/TESTS.md](backend/FinFlow.Tests/TESTS.md) for the pattern (header-signature test, cross-bank false-positive test, one-row mapping test).
 
-Both the CLI and the web app's import pick the new bank up automatically (detection and the import wizard's bank dropdown are driven by the registry).
+The web app's import picks the new bank up automatically (detection and the import wizard's bank dropdown are driven by the registry).
 
 ---
 
 ## Classification
 
-Every transaction is matched against your rules — first match wins, matched against counterparty + purpose:
-
-- **Web app:** rules live in the database and are managed on the *Rules* page (pattern, category, status, priority). Unmatched transactions land in *needs review*; manually assigned categories are marked as manual overrides and survive re-classification. Statuses: auto / needs review / ignore.
-- **CLI:** rules come from a local `rules.json` (`pattern`/`category`/`status`, statuses `auto`/`prüfen`/`ignorieren`). `backend/FinFlow.Cli/rules.example.json` ships as a sanitized template — copy it to `rules.json` (gitignored) and tailor it to your own vendors and employer.
+Every transaction is matched against your rules — first match wins, matched against counterparty + purpose. Rules live in the database and are managed on the *Rules* page (pattern, category, status, priority). Unmatched transactions land in *needs review*; manually assigned categories are marked as manual overrides and survive re-classification. Statuses: auto / needs review / ignore.
 
 Category labels like Spenden, Kinderbetreuung, Kirchensteuer are intentionally kept in German since they map to actual German tax-return line items.
 
-The exported workbook (identical for CLI and web export) contains:
+The exported workbook contains:
 
 | Sheet | Content |
 |---|---|
@@ -209,7 +170,7 @@ The exported workbook (identical for CLI and web export) contains:
 
 - This is not tax or financial advice. The classification is regex-based and can misclassify or miss transactions — always review the "needs review" queue (web) or the "Zu prüfen"/"Ignoriert" sheets (export) before filing.
 - No warranty on correctness or completeness of the classification or the exported figures.
-- Your data stays local: the SQLite database, your bank CSV exports, and your real `rules.json` never leave your machine and are gitignored. The app has no user accounts — anyone who can reach the API can use it, so keep it on your own machine or behind your own reverse proxy/VPN when self-hosting.
+- Your data stays local: the SQLite database and your bank CSV exports never leave your machine and are gitignored. The app has no user accounts — anyone who can reach the API can use it, so keep it on your own machine or behind your own reverse proxy/VPN when self-hosting.
 - Use at your own risk.
 
 ---
