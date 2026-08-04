@@ -1,10 +1,11 @@
 namespace FinFlow;
 
 /// <summary>
-/// The internal, bank-agnostic format used by the CLI's stateless parse→filter→classify→export
-/// flow. Named "Legacy" because the Phase 2 data model introduces a persisted `Transaction`
-/// entity in FinFlow.Api with the same conceptual role but a different (DB-backed) shape —
-/// this type remains the CLI's in-memory, ephemeral parse result.
+/// The bank-agnostic, in-memory shape a parser produces straight from a CSV row. Named "Legacy"
+/// because the Phase 2 data model introduced a persisted `Transaction` entity in FinFlow.Api with
+/// the same conceptual role but a different (DB-backed) shape — this type is now only the
+/// intermediate result `ImportService` maps into that entity, and the shape it's mapped back into
+/// for XLSX/CSV export.
 /// </summary>
 public sealed class LegacyTransaction
 {

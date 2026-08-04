@@ -5,7 +5,7 @@ namespace FinFlow;
 /// </summary>
 public interface IBankCsvParser
 {
-    /// <summary>Short name, e.g. "dkb". Used for --bank and in output.</summary>
+    /// <summary>Short name, e.g. "dkb". Used for detection overrides and in the import UI.</summary>
     string BankName { get; }
 
     /// <summary>Detects from the header row whether this parser matches the file (auto-detection).</summary>
