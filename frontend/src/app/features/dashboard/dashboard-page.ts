@@ -1,6 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ChartConfiguration } from 'chart.js';
 import { ApiService } from '../../core/api.service';
 import { ChartComponent } from '../../shared/chart';
@@ -18,12 +19,20 @@ const NEGATIVE = '#e34948';
 })
 export class DashboardPage {
   private api = inject(ApiService);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
   protected onToolbarEnter(event: Event): void {
     onEnterSubmit(event, () => this.load());
   }
 
-  protected year: number | null = new Date().getFullYear();
+  // Seeded from the URL so a reload restores the same year instead of resetting to today — #35.
+  private qp = this.route.snapshot.queryParamMap;
+  protected year: number | null = this.qp.has('year')
+    ? this.qp.get('year')
+      ? Number(this.qp.get('year'))
+      : null
+    : new Date().getFullYear();
 
   protected readonly summary = signal<DashboardSummary | null>(null);
   protected readonly byCategory = signal<CategoryBreakdown[]>([]);
@@ -34,12 +43,26 @@ export class DashboardPage {
     'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
   ];
 
+  // See TransactionsPage.initialSyncDone for why this guards the very first syncUrl call.
+  private initialSyncDone = false;
+
   constructor() {
     this.load();
+    this.initialSyncDone = true;
     this.api.getForecast(6).subscribe((f) => this.forecast.set(f));
   }
 
+  private syncUrl(): void {
+    if (!this.initialSyncDone) return;
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { year: this.year !== null ? this.year : '' },
+      replaceUrl: true,
+    });
+  }
+
   protected load(): void {
+    this.syncUrl();
     const filter = { year: this.year };
     this.api.getSummary(filter).subscribe((s) => this.summary.set(s));
     this.api.getByCategory(filter).subscribe((c) => this.byCategory.set(c));

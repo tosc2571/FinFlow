@@ -2,9 +2,9 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService, ContractRequest } from '../../core/api.service';
+import { CategoriesService } from '../../core/categories.service';
 import { onEnterSubmit } from '../../shared/keyboard';
 import {
-  CategoryDto,
   ContractDetail,
   ContractDto,
   ContractPeriod,
@@ -20,6 +20,7 @@ import {
 })
 export class ContractsPage {
   private api = inject(ApiService);
+  protected categoriesService = inject(CategoriesService);
 
   protected onToolbarEnter(event: Event): void {
     onEnterSubmit(event, () => this.save());
@@ -30,7 +31,6 @@ export class ContractsPage {
   protected readonly occurrenceStatusLabels = OCCURRENCE_STATUS_LABELS;
 
   protected readonly contracts = signal<ContractDto[]>([]);
-  protected readonly categories = signal<CategoryDto[]>([]);
   protected readonly detail = signal<ContractDetail | null>(null);
 
   protected editingId: number | null = null;
@@ -45,7 +45,7 @@ export class ContractsPage {
 
   constructor() {
     this.load();
-    this.api.getCategories().subscribe((c) => this.categories.set(c));
+    this.categoriesService.ensureLoaded();
   }
 
   protected load(): void {

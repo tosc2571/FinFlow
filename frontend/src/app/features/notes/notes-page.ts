@@ -39,18 +39,21 @@ export class NotesPage {
     this.api.createNote(name, '').subscribe((note) => {
       this.newNoteName = '';
       this.load();
-      this.open(note.name, note.content);
+      // Freshly created and empty — nothing to preview yet, so start in Edit.
+      this.open(note.name, note.content, 'edit');
     });
   }
 
   protected select(summary: NoteSummaryDto): void {
-    this.api.getNote(summary.name).subscribe((note) => this.open(note.name, note.content));
+    // Notes are read far more often than edited, so opening an existing one defaults to Preview.
+    this.api.getNote(summary.name).subscribe((note) => this.open(note.name, note.content, 'preview'));
   }
 
-  private open(name: string, content: string): void {
+  private open(name: string, content: string, mode: 'edit' | 'preview'): void {
     this.selectedName.set(name);
     this.content = content;
-    this.mode.set('edit');
+    if (mode === 'preview') this.renderedHtml.set(marked.parse(content, { async: false }));
+    this.mode.set(mode);
   }
 
   protected showEdit(): void {

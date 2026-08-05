@@ -28,7 +28,7 @@
     Category
     <select [(ngModel)]="categoryId">
       <option value="">all</option>
-      @for (c of categories(); track c.id) {
+      @for (c of categoriesService.categories(); track c.id) {
         <option [ngValue]="c.id">{{ c.name }}</option>
       }
     </select>
@@ -75,7 +75,7 @@
           <td>
             <select [ngModel]="t.categoryId" (ngModelChange)="setCategory(t, $event === null ? '' : $event)">
               <option [ngValue]="null">—</option>
-              @for (c of categories(); track c.id) {
+              @for (c of categoriesService.categories(); track c.id) {
                 <option [ngValue]="c.id">{{ c.name }}</option>
               }
               <option [ngValue]="manageCategoriesOption">→ Manage categories…</option>

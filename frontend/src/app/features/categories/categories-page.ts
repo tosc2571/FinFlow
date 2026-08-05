@@ -1,6 +1,7 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ApiService, CategoryRequest } from '../../core/api.service';
+import { CategoryRequest } from '../../core/api.service';
+import { CategoriesService } from '../../core/categories.service';
 import { onEnterSubmit } from '../../shared/keyboard';
 import { CategoryDto } from '../../shared/models';
 
@@ -10,13 +11,11 @@ import { CategoryDto } from '../../shared/models';
   templateUrl: './categories-page.html',
 })
 export class CategoriesPage {
-  private api = inject(ApiService);
+  protected categoriesService = inject(CategoriesService);
 
   protected onToolbarEnter(event: Event): void {
     onEnterSubmit(event, () => this.save());
   }
-
-  protected readonly categories = signal<CategoryDto[]>([]);
 
   protected editingId: number | null = null;
   protected name = '';
@@ -25,20 +24,16 @@ export class CategoriesPage {
   protected sortOrder = 0;
 
   constructor() {
-    this.load();
-  }
-
-  protected load(): void {
-    this.api.getCategories().subscribe((c) => this.categories.set(c));
+    this.categoriesService.ensureLoaded();
   }
 
   protected parentName(category: CategoryDto): string {
     if (category.parentCategoryId === null) return '';
-    return this.categories().find((c) => c.id === category.parentCategoryId)?.name ?? '';
+    return this.categoriesService.categories().find((c) => c.id === category.parentCategoryId)?.name ?? '';
   }
 
   protected parentOptions(): CategoryDto[] {
-    return this.categories().filter((c) => c.id !== this.editingId);
+    return this.categoriesService.categories().filter((c) => c.id !== this.editingId);
   }
 
   protected edit(category: CategoryDto): void {
@@ -66,15 +61,14 @@ export class CategoriesPage {
       sortOrder: this.sortOrder,
     };
     const call =
-      this.editingId === null ? this.api.createCategory(req) : this.api.updateCategory(this.editingId, req);
-    call.subscribe(() => {
-      this.resetForm();
-      this.load();
-    });
+      this.editingId === null
+        ? this.categoriesService.create(req)
+        : this.categoriesService.update(this.editingId, req);
+    call.subscribe(() => this.resetForm());
   }
 
   protected delete(category: CategoryDto): void {
     if (!confirm(`Delete category "${category.name}"? Its transactions fall back to "needs review".`)) return;
-    this.api.deleteCategory(category.id).subscribe(() => this.load());
+    this.categoriesService.delete(category.id).subscribe();
   }
 }

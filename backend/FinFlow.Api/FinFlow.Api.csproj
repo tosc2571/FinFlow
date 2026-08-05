@@ -20,4 +20,8 @@
     <ProjectReference Include="..\FinFlow.Core\FinFlow.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="FinFlow.Tests" />
+  </ItemGroup>
+
 </Project>

@@ -23,8 +23,7 @@
     }
   </div>
   <p class="muted">
-    Tip: category names like Spenden, Kinderbetreuung, Kirchensteuer map directly to German tax-return line items —
-    see rules.example.json in the repo for a starting taxonomy.
+    Tip: category names like Spenden, Kinderbetreuung, Kirchensteuer map directly to German tax-return line items.
   </p>
 </div>
 
@@ -40,7 +39,7 @@
     </tr>
   </thead>
   <tbody>
-    @for (c of categories(); track c.id) {
+    @for (c of categoriesService.categories(); track c.id) {
       <tr>
         <td>{{ c.sortOrder }}</td>
         <td>{{ c.name }}</td>

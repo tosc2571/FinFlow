@@ -32,6 +32,8 @@ public static class CategoryEndpoints
                 return Results.BadRequest(new { error = "Name must not be empty." });
             if (req.ParentCategoryId is { } parentId && !await db.Categories.AnyAsync(c => c.Id == parentId))
                 return Results.BadRequest(new { error = $"Unknown parent category {parentId}." });
+            if (await IsDuplicateName(db, req.Name, req.ParentCategoryId, excludeId: null))
+                return Results.Conflict(new { error = $"A category named \"{req.Name.Trim()}\" already exists at this level." });
 
             Category category = new()
             {
@@ -59,6 +61,8 @@ public static class CategoryEndpoints
                 if (await WouldCreateCycle(db, id, parentId))
                     return Results.BadRequest(new { error = "Parent assignment would create a cycle." });
             }
+            if (await IsDuplicateName(db, req.Name, req.ParentCategoryId, excludeId: id))
+                return Results.Conflict(new { error = $"A category named \"{req.Name.Trim()}\" already exists at this level." });
 
             category.Name = req.Name.Trim();
             category.ParentCategoryId = req.ParentCategoryId;
@@ -95,6 +99,15 @@ public static class CategoryEndpoints
         [.. all.Where(c => c.ParentCategoryId == parentId)
             .OrderBy(c => c.SortOrder).ThenBy(c => c.Name)
             .Select(c => new CategoryTreeNode(c.Id, c.Name, c.IsIncome, c.SortOrder, BuildTree(all, c.Id)))];
+
+    // Siblings must be unique (case-insensitive); the same name under a different parent is fine —
+    // matches normal tree/folder semantics rather than a single global namespace.
+    internal static async Task<bool> IsDuplicateName(AppDbContext db, string name, int? parentCategoryId, int? excludeId)
+    {
+        string trimmed = name.Trim().ToLower();
+        return await db.Categories.AnyAsync(c =>
+            c.ParentCategoryId == parentCategoryId && c.Id != excludeId && c.Name.ToLower() == trimmed);
+    }
 
     private static async Task<bool> WouldCreateCycle(AppDbContext db, int categoryId, int newParentId)
     {
