@@ -17,7 +17,7 @@
       Category
       <select [ngModel]="categoryId" (ngModelChange)="onCategoryChange($event)">
         <option value="">— choose —</option>
-        @for (c of categories(); track c.id) {
+        @for (c of categoriesService.categories(); track c.id) {
           <option [ngValue]="c.id">{{ c.name }}</option>
         }
         <option [ngValue]="manageCategoriesOption">→ Manage categories…</option>

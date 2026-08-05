@@ -3,8 +3,9 @@ import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService, RuleRequest } from '../../core/api.service';
+import { CategoriesService } from '../../core/categories.service';
 import { onEnterSubmit } from '../../shared/keyboard';
-import { CategoryDto, PatternTestResult, ReclassifyResult, RuleDto, RuleStatus } from '../../shared/models';
+import { PatternTestResult, ReclassifyResult, RuleDto, RuleStatus } from '../../shared/models';
 
 @Component({
   selector: 'app-rules-page',
@@ -14,6 +15,7 @@ import { CategoryDto, PatternTestResult, ReclassifyResult, RuleDto, RuleStatus }
 export class RulesPage {
   private api = inject(ApiService);
   private router = inject(Router);
+  protected categoriesService = inject(CategoriesService);
   private testTimer: ReturnType<typeof setTimeout> | null = null;
 
   protected onToolbarEnter(event: Event): void {
@@ -25,7 +27,6 @@ export class RulesPage {
   protected readonly manageCategoriesOption = '__manage__';
 
   protected readonly rules = signal<RuleDto[]>([]);
-  protected readonly categories = signal<CategoryDto[]>([]);
   protected readonly testResult = signal<PatternTestResult | null>(null);
   protected readonly testError = signal<string | null>(null);
   protected readonly reclassifyResult = signal<ReclassifyResult | null>(null);
@@ -40,7 +41,7 @@ export class RulesPage {
 
   constructor() {
     this.loadRules();
-    this.api.getCategories().subscribe((c) => this.categories.set(c));
+    this.categoriesService.ensureLoaded();
   }
 
   protected loadRules(): void {

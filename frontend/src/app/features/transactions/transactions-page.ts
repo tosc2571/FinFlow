@@ -1,11 +1,11 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../../core/api.service';
+import { CategoriesService } from '../../core/categories.service';
 import { onEnterSubmit } from '../../shared/keyboard';
 import {
-  CategoryDto,
   ClassificationStatus,
   PagedTransactions,
   STATUS_LABELS,
@@ -21,6 +21,8 @@ import {
 export class TransactionsPage {
   private api = inject(ApiService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
+  protected categoriesService = inject(CategoriesService);
 
   protected onToolbarEnter(event: Event): void {
     onEnterSubmit(event, () => this.load(1));
@@ -39,16 +41,23 @@ export class TransactionsPage {
     'InternalTransfer',
   ];
 
-  // Filter form state (plain fields — ngModel; zoneless CD runs after template events).
-  protected year: number | null = new Date().getFullYear();
-  protected contains = '';
-  protected bank = '';
-  protected status: ClassificationStatus | '' = '';
-  protected categoryId: number | '' = '';
-  protected sort = 'date';
+  // Filter form state (plain fields — ngModel; zoneless CD runs after template events). Seeded
+  // from the URL's query params so a reload (or a pasted link) restores the same filtered view
+  // instead of always resetting to today's year — see #35. `qp` is read once here; KeepAliveRouteReuseStrategy
+  // means this constructor never reruns for SPA navigation, only for a fresh app load.
+  private qp = this.route.snapshot.queryParamMap;
+  protected year: number | null = this.qp.has('year')
+    ? this.qp.get('year')
+      ? Number(this.qp.get('year'))
+      : null
+    : new Date().getFullYear();
+  protected contains = this.qp.get('contains') ?? '';
+  protected bank = this.qp.get('bank') ?? '';
+  protected status = (this.qp.get('status') ?? '') as ClassificationStatus | '';
+  protected categoryId: number | '' = this.qp.get('categoryId') ? Number(this.qp.get('categoryId')) : '';
+  protected sort = this.qp.get('sort') ?? 'date';
 
   protected readonly pageSize = 50;
-  protected readonly categories = signal<CategoryDto[]>([]);
   protected readonly data = signal<PagedTransactions | null>(null);
   protected readonly loading = signal(false);
 
@@ -57,9 +66,34 @@ export class TransactionsPage {
     return d ? Math.max(1, Math.ceil(d.total / d.pageSize)) : 1;
   });
 
+  // Guards against calling router.navigate() synchronously while this component is still being
+  // constructed as part of an in-flight navigation (the initial filter state already came FROM
+  // the URL, so there's nothing to write back yet anyway).
+  private initialSyncDone = false;
+
   constructor() {
-    this.api.getCategories().subscribe((c) => this.categories.set(c));
-    this.load(1);
+    this.categoriesService.ensureLoaded();
+    this.load(this.qp.get('page') ? Number(this.qp.get('page')) : 1);
+    this.initialSyncDone = true;
+  }
+
+  /** Keeps the URL in sync with the current filters (query-param values, not history entries —
+   * `replaceUrl` avoids spamming browser history on every page-through/filter tweak). */
+  private syncUrl(page: number): void {
+    if (!this.initialSyncDone) return;
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        year: this.year !== null ? this.year : '',
+        contains: this.contains || null,
+        bank: this.bank || null,
+        status: this.status || null,
+        categoryId: this.categoryId !== '' ? this.categoryId : null,
+        sort: this.sort !== 'date' ? this.sort : null,
+        page: page !== 1 ? page : null,
+      },
+      replaceUrl: true,
+    });
   }
 
   protected filter(): TransactionFilter {
@@ -74,6 +108,7 @@ export class TransactionsPage {
   }
 
   protected load(page: number): void {
+    this.syncUrl(page);
     this.loading.set(true);
     this.api.getTransactions(this.filter(), page, this.pageSize).subscribe({
       next: (d) => {
