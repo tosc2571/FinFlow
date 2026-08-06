@@ -1,9 +1,12 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, ElementRef, Injector, afterNextRender, inject, runInInjectionContext, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { marked } from 'marked';
+import mermaid from 'mermaid';
 import { ApiService } from '../../core/api.service';
 import { onEnterSubmit } from '../../shared/keyboard';
+import { renderMarkdown } from '../../shared/markdown';
 import { NoteSummaryDto } from '../../shared/models';
+
+mermaid.initialize({ startOnLoad: false });
 
 @Component({
   selector: 'app-notes-page',
@@ -12,6 +15,8 @@ import { NoteSummaryDto } from '../../shared/models';
 })
 export class NotesPage {
   private api = inject(ApiService);
+  private el: ElementRef<HTMLElement> = inject(ElementRef);
+  private injector = inject(Injector);
 
   protected readonly notes = signal<NoteSummaryDto[]>([]);
   protected readonly selectedName = signal<string | null>(null);
@@ -23,6 +28,21 @@ export class NotesPage {
 
   constructor() {
     this.load();
+  }
+
+  /** Mermaid needs its ```mermaid blocks (rendered as <pre class="mermaid"> by renderMarkdown)
+   * actually in the DOM before it can find and replace them with SVG — afterNextRender defers
+   * until Angular has committed the [innerHTML] update, unlike a plain effect() on the content
+   * signal, which wouldn't refire when toggling back into an unchanged Preview recreates the
+   * element without changing the signal's value. */
+  private scheduleMermaidRender(): void {
+    runInInjectionContext(this.injector, () =>
+      afterNextRender(() => {
+        const nodes = this.el.nativeElement.querySelectorAll<HTMLElement>('pre.mermaid');
+        if (nodes.length === 0) return;
+        mermaid.run({ nodes: Array.from(nodes) }).catch((err: unknown) => console.error('Mermaid render failed', err));
+      }),
+    );
   }
 
   protected load(): void {
@@ -52,7 +72,10 @@ export class NotesPage {
   private open(name: string, content: string, mode: 'edit' | 'preview'): void {
     this.selectedName.set(name);
     this.content = content;
-    if (mode === 'preview') this.renderedHtml.set(marked.parse(content, { async: false }));
+    if (mode === 'preview') {
+      this.renderedHtml.set(renderMarkdown(content));
+      this.scheduleMermaidRender();
+    }
     this.mode.set(mode);
   }
 
@@ -61,8 +84,9 @@ export class NotesPage {
   }
 
   protected showPreview(): void {
-    this.renderedHtml.set(marked.parse(this.content, { async: false }));
+    this.renderedHtml.set(renderMarkdown(this.content));
     this.mode.set('preview');
+    this.scheduleMermaidRender();
   }
 
   protected save(): void {
