@@ -101,6 +101,12 @@ public class ImportServiceTests : IDisposable
         Assert.Equal(0, second.Imported);
         Assert.Equal(2, second.Duplicates);
         Assert.Equal(2, ctx.Transactions.Count());
+
+        // TransactionCount is the total rows found in the file (2), not just the persisted ones
+        // (0, since every row was a duplicate) — the case the no-duplicates test can't cover.
+        ImportBatch secondBatch = ctx.ImportBatches.Single(b => b.Id == second.BatchId);
+        Assert.Equal(2, secondBatch.TransactionCount);
+        Assert.Equal(2, secondBatch.DuplicateCount);
     }
 
     [Fact]

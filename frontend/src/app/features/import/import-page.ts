@@ -95,8 +95,14 @@ export class ImportPage {
     this.api.getBatches().subscribe((b) => this.batches.set(b));
   }
 
+  /** Persisted count — TransactionCount is the total rows found in the file, duplicates were
+   * never persisted, so this (not transactionCount) is what "Roll back" actually deletes. */
+  protected importedCount(batch: ImportBatchDto): number {
+    return batch.transactionCount - batch.duplicateCount;
+  }
+
   protected deleteBatch(batch: ImportBatchDto): void {
-    if (!confirm(`Roll back batch "${batch.sourceFileName}" (${batch.transactionCount} transaction(s))?`)) return;
+    if (!confirm(`Roll back batch "${batch.sourceFileName}" (${this.importedCount(batch)} transaction(s))?`)) return;
     this.api.deleteBatch(batch.id).subscribe(() => this.loadBatches());
   }
 }
