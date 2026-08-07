@@ -3,14 +3,13 @@ using FinFlow.Api.Data;
 using FinFlow.Api.Services;
 using FinFlow.Classification;
 using FinFlow.Export;
-using FinFlow.Output;
 using Microsoft.EntityFrameworkCore;
 
 namespace FinFlow.Api.Endpoints;
 
 /// <summary>
-/// Reuses the CLI's exporters (XlsxExporter, OutputFormatter) by mapping the persisted
-/// entities back onto Core's LegacyTransaction/ClassifiedTransaction shapes.
+/// Reuses Core's exporters (XlsxExporter, CsvExporter) by mapping the persisted entities back
+/// onto Core's LegacyTransaction/ClassifiedTransaction shapes.
 /// </summary>
 public static class ExportEndpoints
 {
@@ -20,11 +19,7 @@ public static class ExportEndpoints
 
         group.MapGet("/xlsx", (AppDbContext db, [AsParameters] TransactionFilterParams filter) =>
         {
-            List<ClassifiedTransaction> classified = [.. LoadTransactions(db, filter)
-                .Select(t => new ClassifiedTransaction(
-                    ToLegacy(t),
-                    t.Category?.Name ?? "Sonstiges",
-                    ToCliStatus(t.ClassificationStatus)))];
+            List<ClassifiedTransaction> classified = LoadClassified(db, filter);
 
             // XlsxExporter writes to a path, not a stream — use a temp file.
             string tmp = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".xlsx");
@@ -43,15 +38,28 @@ public static class ExportEndpoints
 
         group.MapGet("/csv", (AppDbContext db, [AsParameters] TransactionFilterParams filter) =>
         {
-            List<LegacyTransaction> transactions = [.. LoadTransactions(db, filter).Select(ToLegacy)];
-            string csv = OutputFormatter.Format(transactions, "csv");
+            string csv = CsvExporter.Export(LoadClassified(db, filter));
             return Results.File(Encoding.UTF8.GetBytes(csv), "text/csv", FileName(filter, "csv"));
         });
     }
 
-    private static List<Entities.Transaction> LoadTransactions(AppDbContext db, TransactionFilterParams filter) =>
-        [.. TransactionFilters.Apply(db.Transactions.AsNoTracking().Include(t => t.Category), filter)
+    private static List<ClassifiedTransaction> LoadClassified(AppDbContext db, TransactionFilterParams filter)
+    {
+        // Materialize first, then project — ToLegacy/ToCliStatus are arbitrary C# methods EF
+        // Core 8 can't translate to SQL; chaining .Select() onto the still-IQueryable pipeline
+        // throws at runtime instead of falling back to client evaluation (see DashboardService
+        // for the same pitfall).
+        List<Entities.Transaction> transactions = [.. TransactionFilters.Apply(
+                db.Transactions.AsNoTracking().Include(t => t.Category).ThenInclude(c => c!.ParentCategory),
+                filter)
             .OrderBy(t => t.BookingDate).ThenBy(t => t.Id)];
+
+        return [.. transactions.Select(t => new ClassifiedTransaction(
+            ToLegacy(t),
+            t.Category?.Name ?? "Sonstiges",
+            t.Category?.ParentCategory?.Name ?? t.Category?.Name ?? "Sonstiges",
+            ToCliStatus(t.ClassificationStatus)))];
+    }
 
     private static LegacyTransaction ToLegacy(Entities.Transaction t) => new()
     {

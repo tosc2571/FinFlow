@@ -156,14 +156,16 @@ Every transaction is matched against your rules — first match wins, matched ag
 
 Category labels like Spenden, Kinderbetreuung, Kirchensteuer are intentionally kept in German since they map to actual German tax-return line items.
 
-The exported workbook contains:
+Categories can optionally have one level of sub-categories (e.g. "Miete"/"Nebenkosten" under "Wohnen" — a sub-category can't itself have children). The exported workbook contains:
 
 | Sheet | Content |
 |---|---|
-| **Übersicht** | Totals per category (auto / prüfen) |
-| One sheet per category | Transactions in that category (green = auto/manually confirmed, yellow = please review) |
+| **Übersicht** | Totals per category (auto / prüfen), every row links to its sheet |
+| One sheet per top-level category | Transactions in that category (green = auto/manually confirmed, yellow = please review). A category with sub-categories gets one section per sub-category within the same sheet, plus a "Sonstiges" section for transactions on the top-level category itself |
 | **Zu prüfen** | All yellow transactions across every category |
 | **Ignoriert** | Grouped summary of excluded transactions, for cross-checking |
+
+The CSV export mirrors the same classified data as one flat table (Kategorie/Oberkategorie/Status columns), including every transaction regardless of status.
 
 ---
 

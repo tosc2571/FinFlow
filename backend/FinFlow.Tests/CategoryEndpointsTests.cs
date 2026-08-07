@@ -98,6 +98,96 @@ public class CategoryEndpointsTests : IDisposable
         Assert.True(result);
     }
 
+    [Fact]
+    public async Task ValidateCategory_EmptyName_ReturnsBadRequest()
+    {
+        using AppDbContext ctx = CreateContext();
+
+        CategoryEndpoints.CategoryValidationError? error = await CategoryEndpoints.ValidateCategory(ctx, existing: null, "  ", parentCategoryId: null);
+
+        Assert.NotNull(error);
+        Assert.Equal(400, error!.StatusCode);
+    }
+
+    [Fact]
+    public async Task ValidateCategory_UnknownParent_ReturnsBadRequest()
+    {
+        using AppDbContext ctx = CreateContext();
+
+        CategoryEndpoints.CategoryValidationError? error = await CategoryEndpoints.ValidateCategory(ctx, existing: null, "Miete", parentCategoryId: 999);
+
+        Assert.NotNull(error);
+        Assert.Equal(400, error!.StatusCode);
+        Assert.Contains("Unknown parent", error.Message);
+    }
+
+    [Fact]
+    public async Task ValidateCategory_ParentIsItselfASubCategory_ReturnsBadRequest()
+    {
+        using AppDbContext ctx = CreateContext();
+        int topId = AddCategory(ctx, "Wohnen");
+        int childId = AddCategory(ctx, "Miete", topId);
+
+        CategoryEndpoints.CategoryValidationError? error = await CategoryEndpoints.ValidateCategory(ctx, existing: null, "Kaution", parentCategoryId: childId);
+
+        Assert.NotNull(error);
+        Assert.Equal(400, error!.StatusCode);
+        Assert.Contains("more than two levels", error.Message);
+    }
+
+    [Fact]
+    public async Task ValidateCategory_ValidTopLevelParent_ReturnsNull()
+    {
+        using AppDbContext ctx = CreateContext();
+        int topId = AddCategory(ctx, "Wohnen");
+
+        CategoryEndpoints.CategoryValidationError? error = await CategoryEndpoints.ValidateCategory(ctx, existing: null, "Miete", parentCategoryId: topId);
+
+        Assert.Null(error);
+    }
+
+    [Fact]
+    public async Task ValidateCategory_ReparentingCategoryWithChildren_ReturnsBadRequest()
+    {
+        using AppDbContext ctx = CreateContext();
+        int otherTopId = AddCategory(ctx, "Auto");
+        int parentWithChildrenId = AddCategory(ctx, "Wohnen");
+        AddCategory(ctx, "Miete", parentWithChildrenId);
+        Category parentWithChildren = await ctx.Categories.FindAsync(parentWithChildrenId) ?? throw new InvalidOperationException();
+
+        CategoryEndpoints.CategoryValidationError? error = await CategoryEndpoints.ValidateCategory(ctx, existing: parentWithChildren, "Wohnen", parentCategoryId: otherTopId);
+
+        Assert.NotNull(error);
+        Assert.Equal(400, error!.StatusCode);
+        Assert.Contains("already has sub-categories", error.Message);
+    }
+
+    [Fact]
+    public async Task ValidateCategory_SelfReferencingParent_ReturnsBadRequest()
+    {
+        using AppDbContext ctx = CreateContext();
+        int id = AddCategory(ctx, "Wohnen");
+        Category category = await ctx.Categories.FindAsync(id) ?? throw new InvalidOperationException();
+
+        CategoryEndpoints.CategoryValidationError? error = await CategoryEndpoints.ValidateCategory(ctx, existing: category, "Wohnen", parentCategoryId: id);
+
+        Assert.NotNull(error);
+        Assert.Equal(400, error!.StatusCode);
+        Assert.Contains("cycle", error.Message);
+    }
+
+    [Fact]
+    public async Task ValidateCategory_DuplicateName_ReturnsConflict()
+    {
+        using AppDbContext ctx = CreateContext();
+        AddCategory(ctx, "Miete");
+
+        CategoryEndpoints.CategoryValidationError? error = await CategoryEndpoints.ValidateCategory(ctx, existing: null, "Miete", parentCategoryId: null);
+
+        Assert.NotNull(error);
+        Assert.Equal(409, error!.StatusCode);
+    }
+
     public void Dispose()
     {
         SqliteConnection.ClearAllPools();
