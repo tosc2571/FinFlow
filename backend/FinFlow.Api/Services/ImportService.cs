@@ -107,7 +107,12 @@ public class ImportService(
             imported++;
         }
 
-        batch.TransactionCount = imported;
+        // Total rows found in the file, not just the persisted ones — the import history's
+        // "Transactions" column should answer "how many bookings were in this CSV", with
+        // "Imported" (TransactionCount - DuplicateCount) answering "how many actually landed
+        // in the database" separately. imported + duplicates == parsed.Count by construction:
+        // every parsed row falls into exactly one of the two buckets above.
+        batch.TransactionCount = parsed.Count;
         batch.DuplicateCount = duplicates;
         await db.SaveChangesAsync();
         return new ImportFileResult(fileName, parser.BankName, batch.Id, imported, duplicates, null);

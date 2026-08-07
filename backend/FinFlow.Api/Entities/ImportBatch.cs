@@ -8,6 +8,8 @@ public class ImportBatch
     public required string SourceFileName { get; set; }
     public required string DetectedBank { get; set; }
     public DateTime ImportedAt { get; set; } = DateTime.UtcNow;
+    /// <summary>Total rows parsed from the file — imported (TransactionCount - DuplicateCount)
+    /// plus skipped duplicates, not just the persisted ones.</summary>
     public int TransactionCount { get; set; }
     public int DuplicateCount { get; set; }
     public ImportStatus Status { get; set; }

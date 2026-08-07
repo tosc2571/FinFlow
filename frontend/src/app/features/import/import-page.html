@@ -105,6 +105,7 @@
       <th>File</th>
       <th>Bank</th>
       <th>Transactions</th>
+      <th>Imported</th>
       <th>Duplicates</th>
       <th>Status</th>
       <th></th>
@@ -117,6 +118,7 @@
         <td>{{ b.sourceFileName }}</td>
         <td>{{ b.detectedBank }}</td>
         <td>{{ b.transactionCount }}</td>
+        <td>{{ importedCount(b) }}</td>
         <td>{{ b.duplicateCount }}</td>
         <td>
           @if (b.status === 'Failed') {
@@ -129,7 +131,7 @@
       </tr>
     } @empty {
       <tr>
-        <td colspan="7" class="muted">No imports yet.</td>
+        <td colspan="8" class="muted">No imports yet.</td>
       </tr>
     }
   </tbody>
