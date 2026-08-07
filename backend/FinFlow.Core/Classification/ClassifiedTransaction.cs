@@ -10,5 +10,5 @@ public sealed record ClassifiedTransaction(
     LegacyTransaction Transaction,
     string Category,
     string TopCategory,
-    string Status // "auto" | "prüfen" | "ignorieren"
+    string Status // "auto" | "review" | "ignored"
 );

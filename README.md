@@ -160,18 +160,18 @@ Categories can optionally have one level of sub-categories (e.g. "Miete"/"Nebenk
 
 | Sheet | Content |
 |---|---|
-| **Übersicht** | Totals per category (auto / prüfen), every row links to its sheet |
-| One sheet per top-level category | Transactions in that category (green = auto/manually confirmed, yellow = please review). A category with sub-categories gets one section per sub-category within the same sheet, plus a "Sonstiges" section for transactions on the top-level category itself |
-| **Zu prüfen** | All yellow transactions across every category |
-| **Ignoriert** | Grouped summary of excluded transactions, for cross-checking |
+| **Overview** | Totals per category (auto / needs review), every row links to its sheet |
+| One sheet per top-level category | Transactions in that category (green = auto/manually confirmed, yellow = please review). A category with sub-categories gets one section per sub-category within the same sheet, plus an "Other" section for transactions on the top-level category itself |
+| **Needs review** | All yellow transactions across every category |
+| **Ignored** | Grouped summary of excluded transactions, for cross-checking |
 
-The CSV export mirrors the same classified data as one flat table (Kategorie/Oberkategorie/Status columns), including every transaction regardless of status.
+The CSV export mirrors the same classified data as one flat table (Category/Top Category/Status columns), including every transaction regardless of status.
 
 ---
 
 ## Legal notes
 
-- This is not tax or financial advice. The classification is regex-based and can misclassify or miss transactions — always review the "needs review" queue (web) or the "Zu prüfen"/"Ignoriert" sheets (export) before filing.
+- This is not tax or financial advice. The classification is regex-based and can misclassify or miss transactions — always review the "needs review" queue (web) or the "Needs review"/"Ignored" sheets (export) before filing.
 - No warranty on correctness or completeness of the classification or the exported figures.
 - Your data stays local: the SQLite database and your bank CSV exports never leave your machine and are gitignored. The app has no user accounts — anyone who can reach the API can use it, so keep it on your own machine or behind your own reverse proxy/VPN when self-hosting.
 - Use at your own risk.

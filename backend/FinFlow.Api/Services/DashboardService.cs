@@ -52,7 +52,7 @@ public class DashboardService(AppDbContext db)
             .GroupBy(r => (r.CategoryId, r.CategoryName))
             .Select(g => new CategoryBreakdown(
                 g.Key.CategoryId,
-                g.Key.CategoryName ?? "Sonstiges", // same fallback label as the CLI classifier
+                g.Key.CategoryName ?? "Other", // same fallback label as the export pipeline
                 g.Count(),
                 g.Sum(r => r.Amount)))
             .OrderBy(b => b.CategoryName)];
