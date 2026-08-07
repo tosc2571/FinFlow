@@ -14,6 +14,13 @@ Branch protection on `main` (set via `gh api`, applies to admins too):
 
 ## Normal flow
 
+**No code change without a tracking issue and a PR — no exceptions.** Every
+piece of work, however small (a one-line bug fix, a doc tweak), starts with
+a `gh issue create` and lands via a pull request, never a direct commit
+pushed straight through on a branch with no issue behind it. This applies
+even when the user reports something informally in chat ("X is broken") —
+create the issue first, then branch/implement/PR against it.
+
 1. **Never commit on `main`.** Branch from the current remote state:
    `git fetch origin && git switch -c feat/<topic> origin/main`
 2. **Commits:** English, imperative, conventional-commit prefix
@@ -29,8 +36,18 @@ Branch protection on `main` (set via `gh api`, applies to admins too):
 4. `git push -u origin feat/<topic>`
 5. `gh pr create` — English title and body summarizing the change; the body
    ends with the Claude Code attribution line from the harness guidelines.
+   - **Use a closing keyword for the tracked issue** (`Closes #N` /
+     `Fixes #N`), not just a bare `(#N)` reference — a bare reference
+     doesn't auto-close the issue on merge, leaving it stale-open even
+     though the work is done (happened with #30/PR #32).
 6. Wait for `backend`, `frontend`, `smoke`, and `docker` to pass, then merge
    (`gh pr merge --merge`) and delete the branch.
+   - **Sleep at least 60s before the first `gh pr checks`/`gh run list`
+     call after pushing or creating a PR.** GitHub Actions can take a while
+     to dispatch the workflow run; checking earlier reliably prints "no
+     checks reported" even when everything is fine, which reads like a
+     stuck/failed trigger it isn't. Don't chain shorter sleeps or retry
+     loops to work around this — one 60s wait, then check.
 
 ## GitHub issues
 

@@ -18,6 +18,7 @@ Supported banks: **DKB** (checking + credit card), **ING**, **HVB** (checking + 
 - Dashboard: income/expenses/net summary, monthly trend, per-category breakdown, and a multi-month forecast driven by your contracts.
 - Contracts: track recurring payments (rent, insurance, salary, subscriptions) by period and due date. Expected amounts are a rolling average of recent matched payments rather than a fixed value, so fluctuating income (bonuses, overtime) doesn't trigger false deviations. Missing or off-amount payments are surfaced for review, not silently ignored. Create one from scratch or from an existing transaction with one click.
 - Accounts: register your own bank accounts (by IBAN) so money moved between them — even across different banks — is recognized as an internal transfer and excluded from income/expense statistics, instead of inflating both sides as fake spending and earning.
+- Notes: a space for free-form personal notes — financial strategy write-ups, or documenting how you've set up your own categories/rules — stored as plain `.md` files in a `notes/` folder next to the database, not locked into SQLite. Edit/Preview toggle renders Markdown, including `mermaid` fenced code blocks as actual diagrams (flowcharts, sequence diagrams, etc.).
 - XLSX/CSV export honoring the current filter.
 
 **Parsing engine:**
