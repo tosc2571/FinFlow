@@ -24,79 +24,76 @@ public class XlsxExporterTests : IDisposable
     {
         List<ClassifiedTransaction> classified =
         [
-            new(Tx("Arbeitgeber", 3000m), "Gehalt", "Gehalt", "auto"),
+            new(Tx("Employer", 3000m), "Salary", "Salary", "auto"),
         ];
 
         XlsxExporter.Export(classified, _path);
 
         using XLWorkbook wb = new(_path);
-        IXLWorksheet ws = wb.Worksheet("Gehalt");
-        // Single-section layout: header row 1 has no "Kategorie" column.
-        Assert.Equal("Datum", ws.Cell(1, 1).GetString());
+        IXLWorksheet ws = wb.Worksheet("Salary");
+        // Single-section layout: header row 1 has no "Category" column.
+        Assert.Equal("Date", ws.Cell(1, 1).GetString());
         Assert.Equal("Bank", ws.Cell(1, 2).GetString());
-        Assert.Equal("Betrag €", ws.Cell(1, 5).GetString());
+        Assert.Equal("Amount (€)", ws.Cell(1, 5).GetString());
         Assert.Equal("Status", ws.Cell(1, 7).GetString());
-        Assert.Equal("Arbeitgeber", ws.Cell(2, 3).GetString());
-        Assert.Equal("Summe", ws.Cell(3, 4).GetString());
+        Assert.Equal("Employer", ws.Cell(2, 3).GetString());
+        Assert.Equal("Subtotal", ws.Cell(3, 4).GetString());
         Assert.Equal(3000d, ws.Cell(3, 5).GetDouble());
     }
 
     [Fact]
-    public void TopCategoryWithChildren_CreatesOneSectionPerChildWithKategorieColumn()
+    public void TopCategoryWithChildren_CreatesOneSectionPerChildWithCategoryColumn()
     {
         List<ClassifiedTransaction> classified =
         [
-            new(Tx("Vermieter", -1000m), "Miete", "Wohnen", "auto"),
-            new(Tx("Stadtwerke", -150m), "Nebenkosten", "Wohnen", "auto"),
+            new(Tx("Landlord", -1000m), "Rent", "Housing", "auto"),
+            new(Tx("Utility Co", -150m), "Utilities", "Housing", "auto"),
         ];
 
         XlsxExporter.Export(classified, _path);
 
         using XLWorkbook wb = new(_path);
-        IXLWorksheet ws = wb.Worksheet("Wohnen");
+        IXLWorksheet ws = wb.Worksheet("Housing");
 
-        // Section 1: "Miete" title, then an 8-column header including "Kategorie".
-        Assert.Equal("Miete", ws.Cell(1, 1).GetString());
-        Assert.Equal("Datum", ws.Cell(2, 1).GetString());
-        Assert.Equal("Kategorie", ws.Cell(2, 2).GetString());
-        Assert.Equal("Betrag €", ws.Cell(2, 6).GetString());
-        Assert.Equal("Miete", ws.Cell(3, 2).GetString());
-        Assert.Equal("Vermieter", ws.Cell(3, 4).GetString());
+        // Section 1: "Rent" title, then an 8-column header including "Category".
+        Assert.Equal("Rent", ws.Cell(1, 1).GetString());
+        Assert.Equal("Date", ws.Cell(2, 1).GetString());
+        Assert.Equal("Category", ws.Cell(2, 2).GetString());
+        Assert.Equal("Amount (€)", ws.Cell(2, 6).GetString());
+        Assert.Equal("Rent", ws.Cell(3, 2).GetString());
+        Assert.Equal("Landlord", ws.Cell(3, 4).GetString());
     }
 
     [Fact]
-    public void TransactionsDirectlyOnParent_GetASonstigesSection()
+    public void TransactionsDirectlyOnParent_GetAnOtherSection()
     {
         List<ClassifiedTransaction> classified =
         [
-            new(Tx("Vermieter", -1000m), "Miete", "Wohnen", "auto"),
-            new(Tx("Direkt auf Wohnen", -50m), "Wohnen", "Wohnen", "auto"),
+            new(Tx("Landlord", -1000m), "Rent", "Housing", "auto"),
+            new(Tx("Direct on Housing", -50m), "Housing", "Housing", "auto"),
         ];
 
         XlsxExporter.Export(classified, _path);
 
         using XLWorkbook wb = new(_path);
-        IXLWorksheet ws = wb.Worksheet("Wohnen");
+        IXLWorksheet ws = wb.Worksheet("Housing");
 
-        List<string> sectionTitles = [ws.Cell(1, 1).GetString()];
-        // "Sonstiges" sorts after named children — find its title row by scanning column A.
-        bool foundSonstiges = ws.Column(1).CellsUsed().Any(c => c.GetString() == "Sonstiges");
-        Assert.True(foundSonstiges);
+        Assert.Contains(ws.Column(1).CellsUsed(), c => c.GetString() == "Other");
     }
 
     [Fact]
-    public void ChildlessCategory_NeverGetsRelabeledSonstiges()
+    public void ChildlessCategory_NeverGetsRelabeledOther()
     {
         List<ClassifiedTransaction> classified =
         [
-            new(Tx("Arbeitgeber", 3000m), "Gehalt", "Gehalt", "auto"),
+            new(Tx("Employer", 3000m), "Salary", "Salary", "auto"),
         ];
 
         XlsxExporter.Export(classified, _path);
 
         using XLWorkbook wb = new(_path);
-        IXLWorksheet ws = wb.Worksheet("Gehalt");
-        Assert.DoesNotContain(ws.Column(1).CellsUsed(), c => c.GetString() == "Sonstiges");
+        IXLWorksheet ws = wb.Worksheet("Salary");
+        Assert.DoesNotContain(ws.Column(1).CellsUsed(), c => c.GetString() == "Other");
     }
 
     [Fact]
@@ -104,16 +101,16 @@ public class XlsxExporterTests : IDisposable
     {
         List<ClassifiedTransaction> classified =
         [
-            new(Tx("Vermieter", -1000m), "Miete", "Wohnen", "auto"),
+            new(Tx("Landlord", -1000m), "Rent", "Housing", "auto"),
         ];
 
         XlsxExporter.Export(classified, _path);
 
         using XLWorkbook wb = new(_path);
-        IXLWorksheet overview = wb.Worksheet("Übersicht");
-        IXLCell mieteCell = overview.Column(1).CellsUsed().Single(c => c.GetString() == "Miete");
-        Assert.True(mieteCell.HasHyperlink);
-        Assert.Equal("Wohnen", mieteCell.GetHyperlink().InternalAddress.Split('!')[0].Trim('\''));
+        IXLWorksheet overview = wb.Worksheet("Overview");
+        IXLCell rentCell = overview.Column(1).CellsUsed().Single(c => c.GetString() == "Rent");
+        Assert.True(rentCell.HasHyperlink);
+        Assert.Equal("Housing", rentCell.GetHyperlink().InternalAddress.Split('!')[0].Trim('\''));
     }
 
     [Fact]
@@ -121,20 +118,20 @@ public class XlsxExporterTests : IDisposable
     {
         List<ClassifiedTransaction> classified =
         [
-            new(Tx("Versicherer A", -50m), "Versicherung", "Wohnen", "auto"),
-            new(Tx("Versicherer B", -80m), "Versicherung", "Auto", "auto"),
+            new(Tx("Insurer A", -50m), "Insurance", "Housing", "auto"),
+            new(Tx("Insurer B", -80m), "Insurance", "Car", "auto"),
         ];
 
         XlsxExporter.Export(classified, _path);
 
         using XLWorkbook wb = new(_path);
-        IXLWorksheet overview = wb.Worksheet("Übersicht");
-        List<IXLCell> versicherungRows = [.. overview.Column(1).CellsUsed().Where(c => c.GetString() == "Versicherung")];
+        IXLWorksheet overview = wb.Worksheet("Overview");
+        List<IXLCell> insuranceRows = [.. overview.Column(1).CellsUsed().Where(c => c.GetString() == "Insurance")];
         // Two distinct rows, not merged into one — each links to its own parent sheet.
-        Assert.Equal(2, versicherungRows.Count);
-        List<string> targets = [.. versicherungRows.Select(c => c.GetHyperlink().InternalAddress.Split('!')[0].Trim('\''))];
-        Assert.Contains("Wohnen", targets);
-        Assert.Contains("Auto", targets);
+        Assert.Equal(2, insuranceRows.Count);
+        List<string> targets = [.. insuranceRows.Select(c => c.GetHyperlink().InternalAddress.Split('!')[0].Trim('\''))];
+        Assert.Contains("Housing", targets);
+        Assert.Contains("Car", targets);
     }
 
     [Fact]
@@ -142,17 +139,17 @@ public class XlsxExporterTests : IDisposable
     {
         List<ClassifiedTransaction> classified =
         [
-            new(Tx("Arbeitgeber", 3000m), "Gehalt", "Gehalt", "auto"),
-            new(Tx("Unbekannt", -20m), "Sonstiges", "Sonstiges", "prüfen"),
-            new(Tx("Spam", -1m), "Sonstiges", "Sonstiges", "ignorieren"),
+            new(Tx("Employer", 3000m), "Salary", "Salary", "auto"),
+            new(Tx("Unknown", -20m), "Other", "Other", "review"),
+            new(Tx("Spam", -1m), "Other", "Other", "ignored"),
         ];
 
         XlsxExporter.Export(classified, _path);
 
         using XLWorkbook wb = new(_path);
-        IXLWorksheet overview = wb.Worksheet("Übersicht");
-        Assert.Contains(overview.Column(1).CellsUsed(), c => c.GetString() == "Zu prüfen" && c.HasHyperlink);
-        Assert.Contains(overview.Column(1).CellsUsed(), c => c.GetString() == "Ignoriert" && c.HasHyperlink);
+        IXLWorksheet overview = wb.Worksheet("Overview");
+        Assert.Contains(overview.Column(1).CellsUsed(), c => c.GetString() == "Needs review" && c.HasHyperlink);
+        Assert.Contains(overview.Column(1).CellsUsed(), c => c.GetString() == "Ignored" && c.HasHyperlink);
     }
 
     [Fact]
@@ -160,13 +157,13 @@ public class XlsxExporterTests : IDisposable
     {
         List<ClassifiedTransaction> classified =
         [
-            new(Tx("Arbeitgeber", 3000m), "Gehalt", "Gehalt", "auto"),
+            new(Tx("Employer", 3000m), "Salary", "Salary", "auto"),
         ];
 
         XlsxExporter.Export(classified, _path);
 
         using XLWorkbook wb = new(_path);
-        Assert.Equal("Übersicht", wb.Worksheets.First().Name);
+        Assert.Equal("Overview", wb.Worksheets.First().Name);
     }
 
     public void Dispose()

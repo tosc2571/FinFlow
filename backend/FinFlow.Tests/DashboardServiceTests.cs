@@ -67,7 +67,7 @@ public class DashboardServiceTests : IDisposable
     }
 
     [Fact]
-    public void GetByCategory_GroupsWithSonstigesFallback()
+    public void GetByCategory_GroupsWithOtherFallback()
     {
         using AppDbContext ctx = SeedContext(out int groceriesId);
 
@@ -77,7 +77,7 @@ public class DashboardServiceTests : IDisposable
         CategoryBreakdown groceries = rows.Single(r => r.CategoryId == groceriesId);
         Assert.Equal(-45.50m, groceries.Total); // ignored transaction excluded despite same category
         CategoryBreakdown uncategorized = rows.Single(r => r.CategoryId == null);
-        Assert.Equal("Sonstiges", uncategorized.CategoryName);
+        Assert.Equal("Other", uncategorized.CategoryName);
         Assert.Equal(2, uncategorized.Count);
     }
 

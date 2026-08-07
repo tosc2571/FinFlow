@@ -13,7 +13,7 @@ public class CsvExporterTests
         Amount = amount,
         Currency = "EUR",
         CounterpartyName = counterparty,
-        Purpose = "Miete März",
+        Purpose = "Rent March",
     };
 
     [Fact]
@@ -21,19 +21,19 @@ public class CsvExporterTests
     {
         string csv = CsvExporter.Export([]);
 
-        Assert.StartsWith("Datum;Kategorie;Oberkategorie;Bank;Empfänger;Verwendungszweck;Betrag;Währung;Status", csv);
+        Assert.StartsWith("Date;Category;Top Category;Bank;Counterparty;Purpose;Amount;Currency;Status", csv);
     }
 
     [Fact]
     public void Export_OneRow_IncludesCategoryTopCategoryAndStatus()
     {
-        List<ClassifiedTransaction> classified = [new(Tx("Vermieter", -1200m), "Miete", "Wohnen", "auto")];
+        List<ClassifiedTransaction> classified = [new(Tx("Landlord", -1200m), "Rent", "Housing", "auto")];
 
         string csv = CsvExporter.Export(classified);
         string[] lines = csv.Trim().Split('\n');
 
         Assert.Equal(2, lines.Length);
-        Assert.Equal("2025-03-01;Miete;Wohnen;dkb;Vermieter;Miete März;-1200;EUR;auto", lines[1].TrimEnd('\r'));
+        Assert.Equal("2025-03-01;Rent;Housing;dkb;Landlord;Rent March;-1200;EUR;auto", lines[1].TrimEnd('\r'));
     }
 
     [Fact]
@@ -41,25 +41,25 @@ public class CsvExporterTests
     {
         List<ClassifiedTransaction> classified =
         [
-            new(Tx("A", 100m), "Gehalt", "Gehalt", "auto"),
-            new(Tx("B", -20m), "Sonstiges", "Sonstiges", "prüfen"),
-            new(Tx("C", -1m), "Sonstiges", "Sonstiges", "ignorieren"),
+            new(Tx("A", 100m), "Salary", "Salary", "auto"),
+            new(Tx("B", -20m), "Other", "Other", "review"),
+            new(Tx("C", -1m), "Other", "Other", "ignored"),
         ];
 
         string csv = CsvExporter.Export(classified);
 
         Assert.Contains(";auto", csv);
-        Assert.Contains(";prüfen", csv);
-        Assert.Contains(";ignorieren", csv);
+        Assert.Contains(";review", csv);
+        Assert.Contains(";ignored", csv);
     }
 
     [Fact]
     public void Export_ChildlessCategory_TopCategoryEqualsCategory()
     {
-        List<ClassifiedTransaction> classified = [new(Tx("Arbeitgeber", 3000m), "Gehalt", "Gehalt", "auto")];
+        List<ClassifiedTransaction> classified = [new(Tx("Employer", 3000m), "Salary", "Salary", "auto")];
 
         string csv = CsvExporter.Export(classified);
 
-        Assert.Contains("Gehalt;Gehalt;", csv);
+        Assert.Contains("Salary;Salary;", csv);
     }
 }

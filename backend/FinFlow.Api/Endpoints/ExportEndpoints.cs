@@ -56,9 +56,9 @@ public static class ExportEndpoints
 
         return [.. transactions.Select(t => new ClassifiedTransaction(
             ToLegacy(t),
-            t.Category?.Name ?? "Sonstiges",
-            t.Category?.ParentCategory?.Name ?? t.Category?.Name ?? "Sonstiges",
-            ToCliStatus(t.ClassificationStatus)))];
+            t.Category?.Name ?? "Other",
+            t.Category?.ParentCategory?.Name ?? t.Category?.Name ?? "Other",
+            ToExportStatus(t.ClassificationStatus)))];
     }
 
     private static LegacyTransaction ToLegacy(Entities.Transaction t) => new()
@@ -77,13 +77,13 @@ public static class ExportEndpoints
     };
 
     // ManualOverride is a user-confirmed category — green ("auto") in the workbook.
-    // InternalTransfer folds into the same "ignorieren" bucket as Ignored — excluded from the
-    // money sheets either way, and not worth a dedicated sheet in the CLI's shared exporter.
-    private static string ToCliStatus(Entities.ClassificationStatus status) => status switch
+    // InternalTransfer folds into the same "ignored" bucket as Ignored — excluded from the
+    // money sheets either way, and not worth a dedicated sheet in the shared exporter.
+    private static string ToExportStatus(Entities.ClassificationStatus status) => status switch
     {
         Entities.ClassificationStatus.Auto or Entities.ClassificationStatus.ManualOverride => "auto",
-        Entities.ClassificationStatus.Ignored or Entities.ClassificationStatus.InternalTransfer => "ignorieren",
-        _ => "prüfen",
+        Entities.ClassificationStatus.Ignored or Entities.ClassificationStatus.InternalTransfer => "ignored",
+        _ => "review",
     };
 
     private static string FileName(TransactionFilterParams filter, string extension) =>

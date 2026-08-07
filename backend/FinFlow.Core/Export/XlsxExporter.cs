@@ -8,33 +8,33 @@ public static class XlsxExporter
     private static readonly XLColor ColHeader     = XLColor.FromArgb(0x1F, 0x49, 0x7D);
     private static readonly XLColor ColHeaderFont = XLColor.White;
     private static readonly XLColor ColAuto       = XLColor.FromArgb(0xC6, 0xEF, 0xCE); // light green
-    private static readonly XLColor ColPruefen    = XLColor.FromArgb(0xFF, 0xEB, 0x9C); // light yellow
+    private static readonly XLColor ColReview     = XLColor.FromArgb(0xFF, 0xEB, 0x9C); // light yellow
     private static readonly XLColor ColTotal      = XLColor.FromArgb(0xDD, 0xEB, 0xF7); // light blue
 
     public static void Export(IReadOnlyList<ClassifiedTransaction> classified, string outputPath)
     {
         using XLWorkbook wb = new XLWorkbook();
 
-        List<ClassifiedTransaction> pruef = classified
-            .Where(c => c.Status == "prüfen")
+        List<ClassifiedTransaction> review = classified
+            .Where(c => c.Status == "review")
             .OrderBy(c => c.Category).ThenBy(c => c.Transaction.BookingDate)
             .ToList();
-        List<ClassifiedTransaction> ignored = classified.Where(c => c.Status == "ignorieren").ToList();
+        List<ClassifiedTransaction> ignored = classified.Where(c => c.Status == "ignored").ToList();
 
-        // Sheet names are resolved as we go so Übersicht (added first) can already link to them.
+        // Sheet names are resolved as we go so Overview (added first) can already link to them.
         Dictionary<string, IXLWorksheet> topSheets = [];
         foreach (IGrouping<string, ClassifiedTransaction> topGroup in classified
-            .Where(c => c.Status != "ignorieren")
+            .Where(c => c.Status != "ignored")
             .GroupBy(c => c.TopCategory)
             .OrderBy(g => g.Key))
         {
             topSheets[topGroup.Key] = AddTopCategorySheet(wb, topGroup.Key, topGroup.ToList());
         }
 
-        IXLWorksheet? reviewSheet = pruef.Count > 0 ? AddReviewSheet(wb, pruef) : null;
+        IXLWorksheet? reviewSheet = review.Count > 0 ? AddReviewSheet(wb, review) : null;
         IXLWorksheet? ignoredSheet = ignored.Count > 0 ? AddIgnoredSheet(wb, ignored) : null;
 
-        // Übersicht is inserted first (position 0) so it's always the workbook's opening sheet,
+        // Overview is inserted first (position 0) so it's always the workbook's opening sheet,
         // even though it's built last — once every other sheet (and thus every link target) exists.
         AddOverviewSheet(wb, classified, topSheets, reviewSheet, ignoredSheet).Position = 1;
 
@@ -48,29 +48,29 @@ public static class XlsxExporter
         IXLWorksheet? reviewSheet,
         IXLWorksheet? ignoredSheet)
     {
-        IXLWorksheet ws = wb.Worksheets.Add("Übersicht");
+        IXLWorksheet ws = wb.Worksheets.Add("Overview");
         int row = 1;
 
-        WriteHeader(ws, row++, ["Kategorie", "Auto (Anzahl)", "Auto (Summe €)", "Prüfen (Anzahl)", "Prüfen (Summe €)", "Gesamt €"]);
+        WriteHeader(ws, row++, ["Category", "Auto (Count)", "Auto (Total €)", "Review (Count)", "Review (Total €)", "Total €"]);
 
         // Grouped by (TopCategory, Category), not Category alone — two different sub-categories
         // under different parents may share a name (siblings must be unique, cross-parent reuse
         // is allowed), and a bare Category grouping would silently merge their totals together.
         foreach (IGrouping<(string TopCategory, string Category), ClassifiedTransaction> g in all
-            .Where(c => c.Status != "ignorieren")
+            .Where(c => c.Status != "ignored")
             .GroupBy(c => (c.TopCategory, c.Category))
             .OrderBy(g => g.Key.TopCategory).ThenBy(g => g.Key.Category))
         {
-            List<ClassifiedTransaction> autoItems  = g.Where(c => c.Status == "auto").ToList();
-            List<ClassifiedTransaction> pruefItems = g.Where(c => c.Status == "prüfen").ToList();
+            List<ClassifiedTransaction> autoItems   = g.Where(c => c.Status == "auto").ToList();
+            List<ClassifiedTransaction> reviewItems = g.Where(c => c.Status == "review").ToList();
 
             ws.Cell(row, 1).Value = g.Key.Category;
             if (topSheets.TryGetValue(g.Key.TopCategory, out IXLWorksheet? target))
                 SetInternalLink(ws.Cell(row, 1), target);
             ws.Cell(row, 2).Value = autoItems.Count;
             ws.Cell(row, 3).Value = (double)autoItems.Sum(c => c.Transaction.Amount);
-            ws.Cell(row, 4).Value = pruefItems.Count;
-            ws.Cell(row, 5).Value = (double)pruefItems.Sum(c => c.Transaction.Amount);
+            ws.Cell(row, 4).Value = reviewItems.Count;
+            ws.Cell(row, 5).Value = (double)reviewItems.Sum(c => c.Transaction.Amount);
             ws.Cell(row, 6).Value = (double)g.Sum(c => c.Transaction.Amount);
             SetAmountFormat(ws, row, 3);
             SetAmountFormat(ws, row, 5);
@@ -79,8 +79,8 @@ public static class XlsxExporter
         }
 
         // Total row
-        ws.Cell(row, 1).Value = "Gesamt";
-        ws.Cell(row, 6).Value = (double)all.Where(c => c.Status != "ignorieren").Sum(c => c.Transaction.Amount);
+        ws.Cell(row, 1).Value = "Total";
+        ws.Cell(row, 6).Value = (double)all.Where(c => c.Status != "ignored").Sum(c => c.Transaction.Amount);
         SetAmountFormat(ws, row, 6);
         ws.Range(row, 1, row, 6).Style.Fill.BackgroundColor = ColTotal;
         ws.Range(row, 1, row, 6).Style.Font.Bold = true;
@@ -88,13 +88,13 @@ public static class XlsxExporter
 
         if (reviewSheet is not null)
         {
-            ws.Cell(row, 1).Value = "Zu prüfen";
+            ws.Cell(row, 1).Value = "Needs review";
             SetInternalLink(ws.Cell(row, 1), reviewSheet);
             row++;
         }
         if (ignoredSheet is not null)
         {
-            ws.Cell(row, 1).Value = "Ignoriert";
+            ws.Cell(row, 1).Value = "Ignored";
             SetInternalLink(ws.Cell(row, 1), ignoredSheet);
         }
 
@@ -106,8 +106,8 @@ public static class XlsxExporter
     /// <summary>
     /// One sheet per top-level category. A childless one gets a single, unlabeled section —
     /// identical output to before this feature existed. One with children gets one section per
-    /// child plus a "Sonstiges" section for transactions on the parent itself (only if any exist),
-    /// each row also carrying an explicit Kategorie column since the section header alone is lost
+    /// child plus an "Other" section for transactions on the parent itself (only if any exist),
+    /// each row also carrying an explicit Category column since the section header alone is lost
     /// once someone sorts/filters/copies rows out of the sheet.
     /// </summary>
     private static IXLWorksheet AddTopCategorySheet(XLWorkbook wb, string topCategory, List<ClassifiedTransaction> items)
@@ -116,7 +116,7 @@ public static class XlsxExporter
 
         List<IGrouping<string, ClassifiedTransaction>> sections = [.. items
             .GroupBy(c => c.Category)
-            .OrderBy(g => g.Key == topCategory ? 1 : 0) // "Sonstiges" (directly on the parent) last
+            .OrderBy(g => g.Key == topCategory ? 1 : 0) // "Other" (directly on the parent) last
             .ThenBy(g => g.Key)];
 
         bool isSingleSection = sections.Count == 1 && sections[0].Key == topCategory;
@@ -130,12 +130,12 @@ public static class XlsxExporter
         {
             foreach (IGrouping<string, ClassifiedTransaction> section in sections)
             {
-                string label = section.Key == topCategory ? "Sonstiges" : section.Key;
+                string label = section.Key == topCategory ? "Other" : section.Key;
                 WriteTransactionSection(ws, ref row, label, section.ToList());
                 row++; // spacer between sections
             }
 
-            ws.Cell(row, 5).Value = "Gesamt";
+            ws.Cell(row, 5).Value = "Total";
             ws.Cell(row, 6).Value = (double)items.Sum(c => c.Transaction.Amount);
             SetAmountFormat(ws, row, 6);
             ws.Range(row, 1, row, 8).Style.Fill.BackgroundColor = ColTotal;
@@ -152,7 +152,7 @@ public static class XlsxExporter
     /// <summary>
     /// Writes one section: an optional bold section-title row (omitted for a sheet's only
     /// section, matching the pre-hierarchy single-category layout exactly), a column header, the
-    /// transaction rows, and a subtotal row. A Kategorie column is added whenever there's a
+    /// transaction rows, and a subtotal row. A Category column is added whenever there's a
     /// section label to show — i.e. whenever this sheet actually has more than one section.
     /// </summary>
     private static void WriteTransactionSection(IXLWorksheet ws, ref int row, string? sectionLabel, List<ClassifiedTransaction> items)
@@ -166,8 +166,8 @@ public static class XlsxExporter
         }
 
         string[] columns = sectionLabel is null
-            ? ["Datum", "Bank", "Empfänger", "Verwendungszweck", "Betrag €", "Währung", "Status"]
-            : ["Datum", "Kategorie", "Bank", "Empfänger", "Verwendungszweck", "Betrag €", "Währung", "Status"];
+            ? ["Date", "Bank", "Counterparty", "Purpose", "Amount (€)", "Currency", "Status"]
+            : ["Date", "Category", "Bank", "Counterparty", "Purpose", "Amount (€)", "Currency", "Status"];
         WriteHeader(ws, row++, columns);
 
         int amountCol = sectionLabel is null ? 5 : 6;
@@ -187,12 +187,12 @@ public static class XlsxExporter
             ws.Cell(row, col).Value = ct.Status;
             SetAmountFormat(ws, row, amountCol);
             ws.Range(row, 1, row, statusCol).Style.Fill.BackgroundColor =
-                ct.Status == "auto" ? ColAuto : ColPruefen;
+                ct.Status == "auto" ? ColAuto : ColReview;
             row++;
         }
 
         int purposeCol = sectionLabel is null ? 4 : 5;
-        ws.Cell(row, purposeCol).Value = "Summe";
+        ws.Cell(row, purposeCol).Value = "Subtotal";
         ws.Cell(row, amountCol).Value = (double)items.Sum(c => c.Transaction.Amount);
         SetAmountFormat(ws, row, amountCol);
         ws.Range(row, 1, row, statusCol).Style.Fill.BackgroundColor = ColTotal;
@@ -202,10 +202,10 @@ public static class XlsxExporter
 
     private static IXLWorksheet AddReviewSheet(XLWorkbook wb, List<ClassifiedTransaction> items)
     {
-        IXLWorksheet ws = wb.Worksheets.Add("Zu prüfen");
+        IXLWorksheet ws = wb.Worksheets.Add("Needs review");
         int row = 1;
 
-        WriteHeader(ws, row++, ["Datum", "Kategorie", "Bank", "Empfänger", "Verwendungszweck", "Betrag €", "Währung"]);
+        WriteHeader(ws, row++, ["Date", "Category", "Bank", "Counterparty", "Purpose", "Amount (€)", "Currency"]);
 
         foreach (ClassifiedTransaction ct in items)
         {
@@ -218,7 +218,7 @@ public static class XlsxExporter
             ws.Cell(row, 6).Value = (double)t.Amount;
             ws.Cell(row, 7).Value = t.Currency;
             SetAmountFormat(ws, row, 6);
-            ws.Range(row, 1, row, 7).Style.Fill.BackgroundColor = ColPruefen;
+            ws.Range(row, 1, row, 7).Style.Fill.BackgroundColor = ColReview;
             row++;
         }
 
@@ -230,13 +230,13 @@ public static class XlsxExporter
 
     private static IXLWorksheet AddIgnoredSheet(XLWorkbook wb, List<ClassifiedTransaction> ignored)
     {
-        IXLWorksheet ws = wb.Worksheets.Add("Ignoriert");
+        IXLWorksheet ws = wb.Worksheets.Add("Ignored");
         int row = 1;
 
-        WriteHeader(ws, row++, ["Empfänger", "Kategorie", "Anzahl", "Summe €"]);
+        WriteHeader(ws, row++, ["Counterparty", "Category", "Count", "Total €"]);
 
         foreach (IGrouping<string, ClassifiedTransaction> g in ignored
-            .GroupBy(c => c.Transaction.CounterpartyName ?? "(unbekannt)")
+            .GroupBy(c => c.Transaction.CounterpartyName ?? "(unknown)")
             .OrderBy(g => g.Key))
         {
             ws.Cell(row, 1).Value = g.Key;
