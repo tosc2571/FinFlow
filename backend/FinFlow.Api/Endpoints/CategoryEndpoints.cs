@@ -28,12 +28,8 @@ public static class CategoryEndpoints
 
         group.MapPost("/", async (CategoryRequest req, AppDbContext db) =>
         {
-            if (string.IsNullOrWhiteSpace(req.Name))
-                return Results.BadRequest(new { error = "Name must not be empty." });
-            if (req.ParentCategoryId is { } parentId && !await db.Categories.AnyAsync(c => c.Id == parentId))
-                return Results.BadRequest(new { error = $"Unknown parent category {parentId}." });
-            if (await IsDuplicateName(db, req.Name, req.ParentCategoryId, excludeId: null))
-                return Results.Conflict(new { error = $"A category named \"{req.Name.Trim()}\" already exists at this level." });
+            CategoryValidationError? error = await ValidateCategory(db, existing: null, req.Name, req.ParentCategoryId);
+            if (error is not null) return error.ToResult();
 
             Category category = new()
             {
@@ -52,17 +48,8 @@ public static class CategoryEndpoints
         {
             Category? category = await db.Categories.FindAsync(id);
             if (category is null) return Results.NotFound();
-            if (string.IsNullOrWhiteSpace(req.Name))
-                return Results.BadRequest(new { error = "Name must not be empty." });
-            if (req.ParentCategoryId is { } parentId)
-            {
-                if (!await db.Categories.AnyAsync(c => c.Id == parentId))
-                    return Results.BadRequest(new { error = $"Unknown parent category {parentId}." });
-                if (await WouldCreateCycle(db, id, parentId))
-                    return Results.BadRequest(new { error = "Parent assignment would create a cycle." });
-            }
-            if (await IsDuplicateName(db, req.Name, req.ParentCategoryId, excludeId: id))
-                return Results.Conflict(new { error = $"A category named \"{req.Name.Trim()}\" already exists at this level." });
+            CategoryValidationError? error = await ValidateCategory(db, existing: category, req.Name, req.ParentCategoryId);
+            if (error is not null) return error.ToResult();
 
             category.Name = req.Name.Trim();
             category.ParentCategoryId = req.ParentCategoryId;
@@ -76,7 +63,7 @@ public static class CategoryEndpoints
         {
             Category? category = await db.Categories.FindAsync(id);
             if (category is null) return Results.NotFound();
-            if (await db.Categories.AnyAsync(c => c.ParentCategoryId == id))
+            if (await HasChildren(db, id))
                 return Results.Conflict(new { error = "Category has child categories — delete or reassign them first." });
             if (await db.ClassificationRules.AnyAsync(r => r.CategoryId == id))
                 return Results.Conflict(new { error = "Category is used by classification rules — delete or reassign them first." });
@@ -100,6 +87,48 @@ public static class CategoryEndpoints
             .OrderBy(c => c.SortOrder).ThenBy(c => c.Name)
             .Select(c => new CategoryTreeNode(c.Id, c.Name, c.IsIncome, c.SortOrder, BuildTree(all, c.Id)))];
 
+    internal record CategoryValidationError(int StatusCode, string Message)
+    {
+        public IResult ToResult() =>
+            StatusCode == StatusCodes.Status409Conflict ? Results.Conflict(new { error = Message }) : Results.BadRequest(new { error = Message });
+    }
+
+    /// <summary>
+    /// Shared by POST and PUT. `existing` is null for a create (skips the cycle/has-children
+    /// checks, which only make sense once a category already exists) and the category being
+    /// updated for a PUT. Hierarchy is capped at exactly two levels: a category whose chosen
+    /// parent is itself a sub-category is rejected, and a category that already has children of
+    /// its own can't be given a parent (both directions of the same invariant).
+    /// </summary>
+    internal static async Task<CategoryValidationError?> ValidateCategory(
+        AppDbContext db, Category? existing, string name, int? parentCategoryId)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return new(StatusCodes.Status400BadRequest, "Name must not be empty.");
+
+        if (parentCategoryId is { } parentId)
+        {
+            Category? parent = await db.Categories.FindAsync(parentId);
+            if (parent is null)
+                return new(StatusCodes.Status400BadRequest, $"Unknown parent category {parentId}.");
+            if (parent.ParentCategoryId is not null)
+                return new(StatusCodes.Status400BadRequest, $"Cannot nest more than two levels — \"{parent.Name}\" is itself a sub-category.");
+
+            if (existing is not null)
+            {
+                if (await WouldCreateCycle(db, existing.Id, parentId))
+                    return new(StatusCodes.Status400BadRequest, "Parent assignment would create a cycle.");
+                if (await HasChildren(db, existing.Id))
+                    return new(StatusCodes.Status400BadRequest, $"Cannot make \"{existing.Name}\" a sub-category — it already has sub-categories of its own.");
+            }
+        }
+
+        if (await IsDuplicateName(db, name, parentCategoryId, excludeId: existing?.Id))
+            return new(StatusCodes.Status409Conflict, $"A category named \"{name.Trim()}\" already exists at this level.");
+
+        return null;
+    }
+
     // Siblings must be unique (case-insensitive); the same name under a different parent is fine —
     // matches normal tree/folder semantics rather than a single global namespace.
     internal static async Task<bool> IsDuplicateName(AppDbContext db, string name, int? parentCategoryId, int? excludeId)
@@ -108,6 +137,9 @@ public static class CategoryEndpoints
         return await db.Categories.AnyAsync(c =>
             c.ParentCategoryId == parentCategoryId && c.Id != excludeId && c.Name.ToLower() == trimmed);
     }
+
+    internal static async Task<bool> HasChildren(AppDbContext db, int categoryId) =>
+        await db.Categories.AnyAsync(c => c.ParentCategoryId == categoryId);
 
     private static async Task<bool> WouldCreateCycle(AppDbContext db, int categoryId, int newParentId)
     {
