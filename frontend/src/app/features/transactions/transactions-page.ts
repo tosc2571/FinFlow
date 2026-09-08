@@ -1,11 +1,13 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, viewChild } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { CategoriesService } from '../../core/categories.service';
 import { onEnterSubmit } from '../../shared/keyboard';
+import { QuickCreateCategoryDialog } from '../../shared/quick-create-category-dialog';
 import {
+  CategoryDto,
   ClassificationStatus,
   PagedTransactions,
   STATUS_LABELS,
@@ -15,7 +17,7 @@ import {
 
 @Component({
   selector: 'app-transactions-page',
-  imports: [FormsModule, DatePipe, DecimalPipe],
+  imports: [FormsModule, DatePipe, DecimalPipe, QuickCreateCategoryDialog],
   templateUrl: './transactions-page.html',
 })
 export class TransactionsPage {
@@ -23,13 +25,18 @@ export class TransactionsPage {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   protected categoriesService = inject(CategoriesService);
+  protected categoryDialog = viewChild.required(QuickCreateCategoryDialog);
+
+  /** Transaction the "→ New category…" option was picked for; set right before the dialog
+   * opens, consumed by onCategoryCreated once the user finishes the form. */
+  private pendingCategoryTx: TransactionDto | null = null;
 
   protected onToolbarEnter(event: Event): void {
     onEnterSubmit(event, () => this.load(1));
   }
 
-  /** Sentinel option value for the per-row category <select>'s "manage categories" entry —
-   * distinct from any real category id (number) or null (clear category). */
+  /** Sentinel option value for the per-row category <select>'s "new category" entry — distinct
+   * from any real category id (number) or null (clear category). */
   protected readonly manageCategoriesOption = '__manage__';
 
   protected readonly statusLabels = STATUS_LABELS;
@@ -126,11 +133,21 @@ export class TransactionsPage {
 
   protected setCategory(t: TransactionDto, value: string): void {
     if (value === this.manageCategoriesOption) {
-      this.router.navigate(['/categories']);
+      this.pendingCategoryTx = t;
+      this.categoryDialog().open();
       return;
     }
     const categoryId = value === '' ? null : Number(value);
     this.api.patchTransaction(t.id, { categoryId }).subscribe(() => this.load(this.data()?.page ?? 1));
+  }
+
+  /** New category created via the dialog — assign it straight to the transaction that
+   * triggered it, so the user never has to click back into the row. */
+  protected onCategoryCreated(category: CategoryDto): void {
+    const t = this.pendingCategoryTx;
+    this.pendingCategoryTx = null;
+    if (!t) return;
+    this.api.patchTransaction(t.id, { categoryId: category.id }).subscribe(() => this.load(this.data()?.page ?? 1));
   }
 
   protected setStatus(t: TransactionDto, status: ClassificationStatus): void {

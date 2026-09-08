@@ -1,28 +1,28 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, viewChild } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
 import { ApiService, RuleRequest } from '../../core/api.service';
 import { CategoriesService } from '../../core/categories.service';
 import { onEnterSubmit } from '../../shared/keyboard';
-import { PatternTestResult, ReclassifyResult, RuleDto, RuleStatus } from '../../shared/models';
+import { QuickCreateCategoryDialog } from '../../shared/quick-create-category-dialog';
+import { CategoryDto, PatternTestResult, ReclassifyResult, RuleDto, RuleStatus } from '../../shared/models';
 
 @Component({
   selector: 'app-rules-page',
-  imports: [FormsModule, DatePipe, DecimalPipe],
+  imports: [FormsModule, DatePipe, DecimalPipe, QuickCreateCategoryDialog],
   templateUrl: './rules-page.html',
 })
 export class RulesPage {
   private api = inject(ApiService);
-  private router = inject(Router);
   protected categoriesService = inject(CategoriesService);
+  protected categoryDialog = viewChild.required(QuickCreateCategoryDialog);
   private testTimer: ReturnType<typeof setTimeout> | null = null;
 
   protected onToolbarEnter(event: Event): void {
     onEnterSubmit(event, () => this.save());
   }
 
-  /** Sentinel option value for the category <select>'s "manage categories" entry — distinct
+  /** Sentinel option value for the category <select>'s "new category" entry — distinct
    * from any real category id (number) or the empty "— choose —" placeholder. */
   protected readonly manageCategoriesOption = '__manage__';
 
@@ -75,10 +75,15 @@ export class RulesPage {
 
   protected onCategoryChange(value: number | string): void {
     if (value === this.manageCategoriesOption) {
-      this.router.navigate(['/categories']);
+      this.categoryDialog().open();
       return;
     }
     this.categoryId = value as number | '';
+  }
+
+  /** New category created via the dialog — select it in the form directly. */
+  protected onCategoryCreated(category: CategoryDto): void {
+    this.categoryId = category.id;
   }
 
   protected edit(rule: RuleDto): void {

@@ -1,0 +1,22 @@
+@if (visible()) {
+  <div class="modal-backdrop" (click)="cancel()">
+    <div class="modal-panel" (click)="$event.stopPropagation()" (keyup.enter)="onDialogEnter($event)">
+      <h2>New category</h2>
+      <label>Name <input type="text" [(ngModel)]="name" placeholder="e.g. Spenden" /></label>
+      <label>
+        Parent
+        <select [(ngModel)]="parentCategoryId">
+          <option value="">— none —</option>
+          @for (c of categories; track c.id) {
+            <option [ngValue]="c.id">{{ c.name }}</option>
+          }
+        </select>
+      </label>
+      <label><input type="checkbox" [(ngModel)]="isIncome" /> income</label>
+      <div class="modal-actions">
+        <button class="primary" [disabled]="!name.trim()" (click)="save()">Create</button>
+        <button (click)="cancel()">Cancel</button>
+      </div>
+    </div>
+  </div>
+}
