@@ -350,6 +350,12 @@ button.danger {
   color: #52514e;
 }
 
+.modal-panel label.modal-checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.4rem;
+}
+
 .modal-actions {
   display: flex;
   gap: 0.5rem;

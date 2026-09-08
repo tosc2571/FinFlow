@@ -12,7 +12,7 @@
           }
         </select>
       </label>
-      <label><input type="checkbox" [(ngModel)]="isIncome" /> income</label>
+      <label class="modal-checkbox"><input type="checkbox" [(ngModel)]="isIncome" /> income</label>
       <div class="modal-actions">
         <button class="primary" [disabled]="!name.trim()" (click)="save()">Create</button>
         <button (click)="cancel()">Cancel</button>
