@@ -78,7 +78,7 @@
               @for (c of categoriesService.categories(); track c.id) {
                 <option [ngValue]="c.id">{{ c.name }}</option>
               }
-              <option [ngValue]="manageCategoriesOption">→ Manage categories…</option>
+              <option [ngValue]="manageCategoriesOption">→ New category…</option>
             </select>
           </td>
           <td>
@@ -116,3 +116,5 @@
 } @else {
   <p class="muted">Loading …</p>
 }
+
+<app-quick-create-category-dialog (created)="onCategoryCreated($event)" />

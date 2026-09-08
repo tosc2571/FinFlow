@@ -20,7 +20,7 @@
         @for (c of categoriesService.categories(); track c.id) {
           <option [ngValue]="c.id">{{ c.name }}</option>
         }
-        <option [ngValue]="manageCategoriesOption">→ Manage categories…</option>
+        <option [ngValue]="manageCategoriesOption">→ New category…</option>
       </select>
     </label>
     <label>
@@ -81,6 +81,8 @@
     <span class="muted">{{ r.reclassified }} reclassified, {{ r.skippedManualOverride }} manual override(s) kept.</span>
   }
 </div>
+
+<app-quick-create-category-dialog (created)="onCategoryCreated($event)" />
 
 <div class="table-scroll">
 <table>
