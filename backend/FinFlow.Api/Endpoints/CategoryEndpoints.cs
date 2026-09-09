@@ -16,7 +16,7 @@ public static class CategoryEndpoints
 
         group.MapGet("/", (AppDbContext db) =>
             db.Categories.AsNoTracking()
-                .OrderBy(c => c.SortOrder).ThenBy(c => c.Name)
+                .OrderBy(c => c.Name)
                 .Select(c => new CategoryDto(c.Id, c.Name, c.ParentCategoryId, c.IsIncome, c.SortOrder, c.Transactions.Count))
                 .ToList());
 

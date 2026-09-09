@@ -24,6 +24,7 @@ import {
   RuleDto,
   RuleStatus,
   SettingsDto,
+  TransactionDto,
   TransactionFilter,
 } from '../shared/models';
 
@@ -71,6 +72,10 @@ export class ApiService {
     return this.http.get<PagedTransactions>('/api/transactions/', {
       params: this.toParams(filter, { page, pageSize }),
     });
+  }
+
+  getTransaction(id: number): Observable<TransactionDto> {
+    return this.http.get<TransactionDto>(`/api/transactions/${id}`);
   }
 
   patchTransaction(id: number, body: { categoryId: number | null; status?: ClassificationStatus }): Observable<unknown> {

@@ -395,6 +395,26 @@ button.danger {
   color: #1c5cab;
 }
 
+/* Transactions row "Classification" cell (#55) — one button opening the combined
+   category+rule dialog, instead of an inline <select> next to a separate rule chip. */
+.classify-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  text-align: left;
+  white-space: nowrap;
+}
+
+/* Categories tree expand/collapse toggle (#56) */
+.tree-toggle {
+  padding: 0 0.3rem;
+  border: none;
+  background: transparent;
+  color: #52514e;
+  margin-right: 0.3rem;
+}
+
 .modal-actions {
   display: flex;
   gap: 0.5rem;

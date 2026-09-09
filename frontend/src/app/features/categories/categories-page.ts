@@ -1,4 +1,5 @@
-import { Component, inject, viewChild } from '@angular/core';
+import { Component, inject, signal, viewChild } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { CategoryRequest } from '../../core/api.service';
@@ -10,7 +11,7 @@ import { CategoryDto, RuleDto } from '../../shared/models';
 
 @Component({
   selector: 'app-categories-page',
-  imports: [FormsModule, RouterLink, RuleEditDialog],
+  imports: [FormsModule, NgTemplateOutlet, RouterLink, RuleEditDialog],
   templateUrl: './categories-page.html',
 })
 export class CategoriesPage {
@@ -26,25 +27,59 @@ export class CategoriesPage {
   protected name = '';
   protected parentCategoryId: number | '' = '';
   protected isIncome = false;
-  protected sortOrder = 0;
 
   /** Text filter (#53) — matches against the category name. */
   protected filterText = '';
+
+  /** Collapsed parent category ids (#56) — everything is expanded by default; only ids
+   * explicitly toggled closed end up here. */
+  private collapsedIds = signal<ReadonlySet<number>>(new Set());
 
   constructor() {
     this.categoriesService.ensureLoaded();
     this.rulesService.ensureLoaded();
   }
 
+  /** Categories matching the text filter, plus any ancestor of a match — so a matching
+   * sub-category doesn't lose its parent row and become orphaned in the tree. */
   protected get filteredCategories(): CategoryDto[] {
     const term = this.filterText.trim().toLowerCase();
-    const categories = this.categoriesService.categories();
-    return term ? categories.filter((c) => c.name.toLowerCase().includes(term)) : categories;
+    const all = this.categoriesService.categories();
+    if (!term) return all;
+    const keepIds = new Set(all.filter((c) => c.name.toLowerCase().includes(term)).map((c) => c.id));
+    for (const c of all) {
+      if (keepIds.has(c.id) && c.parentCategoryId !== null) keepIds.add(c.parentCategoryId);
+    }
+    return all.filter((c) => keepIds.has(c.id));
   }
 
-  protected parentName(category: CategoryDto): string {
-    if (category.parentCategoryId === null) return '';
-    return this.categoriesService.categories().find((c) => c.id === category.parentCategoryId)?.name ?? '';
+  protected get topLevelCategories(): CategoryDto[] {
+    return this.filteredCategories.filter((c) => c.parentCategoryId === null).sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  protected childrenOf(parent: CategoryDto): CategoryDto[] {
+    return this.filteredCategories.filter((c) => c.parentCategoryId === parent.id).sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  /** While filtering, force everything open so matches stay visible regardless of prior state. */
+  protected isExpanded(category: CategoryDto): boolean {
+    return this.filterText.trim() !== '' || !this.collapsedIds().has(category.id);
+  }
+
+  protected toggleExpand(category: CategoryDto): void {
+    this.collapsedIds.update((ids) => {
+      const next = new Set(ids);
+      if (next.has(category.id)) {
+        next.delete(category.id);
+      } else {
+        next.add(category.id);
+      }
+      return next;
+    });
+  }
+
+  protected parentOptions(): CategoryDto[] {
+    return this.categoriesService.categories().filter((c) => c.id !== this.editingId);
   }
 
   /** Rules assigned to this category (#51) — clicking one opens it for editing right here. */
@@ -61,16 +96,11 @@ export class CategoriesPage {
     this.ruleDialog().open(null, null, { categoryId: category.id });
   }
 
-  protected parentOptions(): CategoryDto[] {
-    return this.categoriesService.categories().filter((c) => c.id !== this.editingId);
-  }
-
   protected edit(category: CategoryDto): void {
     this.editingId = category.id;
     this.name = category.name;
     this.parentCategoryId = category.parentCategoryId ?? '';
     this.isIncome = category.isIncome;
-    this.sortOrder = category.sortOrder;
   }
 
   protected resetForm(): void {
@@ -78,7 +108,6 @@ export class CategoriesPage {
     this.name = '';
     this.parentCategoryId = '';
     this.isIncome = false;
-    this.sortOrder = 0;
   }
 
   protected save(): void {
@@ -87,7 +116,8 @@ export class CategoriesPage {
       name: this.name,
       parentCategoryId: this.parentCategoryId === '' ? null : this.parentCategoryId,
       isIncome: this.isIncome,
-      sortOrder: this.sortOrder,
+      // No longer user-editable (#56) — ordering is alphabetical now, within each tree level.
+      sortOrder: 0,
     };
     const call =
       this.editingId === null
