@@ -59,7 +59,7 @@
         <th>Counterparty</th>
         <th>Purpose</th>
         <th class="amount">Amount</th>
-        <th>Category</th>
+        <th>Classification</th>
         <th>Status</th>
         <th></th>
       </tr>
@@ -73,21 +73,12 @@
           <td class="muted">{{ t.purpose }}</td>
           <td class="amount" [class.neg]="t.amount < 0">{{ t.amount | number: '1.2-2' }} €</td>
           <td>
-            <select [ngModel]="t.categoryId" (ngModelChange)="setCategory(t, $event === null ? '' : $event)">
-              <option [ngValue]="null">—</option>
-              @for (c of categoriesService.categories(); track c.id) {
-                <option [ngValue]="c.id">{{ c.name }}</option>
+            <button type="button" class="classify-cell" (click)="classify(t)">
+              <span>{{ t.categoryName ?? '— uncategorized —' }}</span>
+              @if (t.matchedRulePattern) {
+                <span class="rule-chip">{{ t.matchedRulePattern }}</span>
               }
-              <option [ngValue]="manageCategoriesOption">→ New category…</option>
-            </select>
-            @if (t.matchedRuleId !== null) {
-              <button type="button" class="rule-chip" title="Classified by this rule — click to edit"
-                (click)="openMatchedRule(t)">
-                {{ t.matchedRulePattern }}
-              </button>
-            } @else if (t.categoryId === null) {
-              <button type="button" (click)="openRulePicker(t)">+ Add to existing rule</button>
-            }
+            </button>
           </td>
           <td>
             <span class="badge" [class]="'badge ' + t.classificationStatus.toLowerCase()">
@@ -125,6 +116,4 @@
   <p class="muted">Loading …</p>
 }
 
-<app-quick-create-category-dialog (created)="onCategoryCreated($event)" />
-<app-rule-edit-dialog (saved)="onRuleSaved()" />
-<app-rule-picker-dialog (picked)="onRulePicked($event)" (createNew)="onRuleCreateNew()" />
+<app-transaction-classify-dialog (changed)="onClassifyChanged()" />

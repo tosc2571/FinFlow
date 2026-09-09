@@ -1,0 +1,44 @@
+@if (visible()) {
+  <div class="modal-backdrop" (click)="cancel()">
+    <div class="modal-panel" (click)="$event.stopPropagation()" (keyup.enter)="onDialogEnter($event)">
+      <h2>Classify transaction</h2>
+      @if (transaction; as t) {
+        <p class="muted">
+          {{ t.bookingDate | date: 'dd.MM.yyyy' }} · {{ t.counterpartyName }} · {{ t.purpose }} ·
+          {{ t.amount | number: '1.2-2' }} €
+        </p>
+        <label>
+          Category
+          <select [ngModel]="categoryId" (ngModelChange)="onCategorySelect($event === null ? '' : $event)">
+            <option [ngValue]="''">—</option>
+            @for (c of categoriesService.categories(); track c.id) {
+              <option [ngValue]="c.id">{{ c.name }}</option>
+            }
+            <option [ngValue]="manageCategoriesOption">→ New category…</option>
+          </select>
+        </label>
+
+        <div>
+          <span class="muted">Rule</span><br />
+          @if (t.matchedRuleId !== null) {
+            <button type="button" class="rule-chip" title="Classified by this rule — click to edit" (click)="editRule()">
+              {{ t.matchedRulePattern }}
+            </button>
+          } @else {
+            <button type="button" (click)="openRulePicker()">+ Add to existing rule</button>
+          }
+        </div>
+      }
+      <div class="modal-actions">
+        <button class="primary" [disabled]="saving()" (click)="save()">
+          {{ saving() ? 'Saving …' : 'Save' }}
+        </button>
+        <button (click)="cancel()">Cancel</button>
+      </div>
+    </div>
+  </div>
+}
+
+<app-quick-create-category-dialog (created)="onCategoryCreated($event)" />
+<app-rule-edit-dialog (saved)="onRuleSaved()" />
+<app-rule-picker-dialog (picked)="onRulePicked($event)" (createNew)="onRuleCreateNew()" />
