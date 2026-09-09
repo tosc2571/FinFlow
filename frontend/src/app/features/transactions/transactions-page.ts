@@ -182,6 +182,14 @@ export class TransactionsPage {
     this.ruleDialog().open(rule, { counterpartyName: t.counterpartyName, purpose: t.purpose });
   }
 
+  /** No existing rule fit — open the editor in create mode, seeded from this transaction. */
+  protected onRuleCreateNew(): void {
+    const t = this.pendingRuleTx;
+    this.pendingRuleTx = null;
+    if (!t) return;
+    this.ruleDialog().open(null, { counterpartyName: t.counterpartyName, purpose: t.purpose }, { pattern: t.counterpartyName ?? '' });
+  }
+
   /** The dialog already re-ran classification server-side — just reload to show the result. */
   protected onRuleSaved(): void {
     this.load(this.data()?.page ?? 1);

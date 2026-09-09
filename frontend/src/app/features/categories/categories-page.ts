@@ -1,5 +1,6 @@
 import { Component, inject, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { CategoryRequest } from '../../core/api.service';
 import { CategoriesService } from '../../core/categories.service';
 import { RulesService } from '../../core/rules.service';
@@ -9,7 +10,7 @@ import { CategoryDto, RuleDto } from '../../shared/models';
 
 @Component({
   selector: 'app-categories-page',
-  imports: [FormsModule, RuleEditDialog],
+  imports: [FormsModule, RouterLink, RuleEditDialog],
   templateUrl: './categories-page.html',
 })
 export class CategoriesPage {
@@ -27,9 +28,18 @@ export class CategoriesPage {
   protected isIncome = false;
   protected sortOrder = 0;
 
+  /** Text filter (#53) — matches against the category name. */
+  protected filterText = '';
+
   constructor() {
     this.categoriesService.ensureLoaded();
     this.rulesService.ensureLoaded();
+  }
+
+  protected get filteredCategories(): CategoryDto[] {
+    const term = this.filterText.trim().toLowerCase();
+    const categories = this.categoriesService.categories();
+    return term ? categories.filter((c) => c.name.toLowerCase().includes(term)) : categories;
   }
 
   protected parentName(category: CategoryDto): string {
@@ -44,6 +54,11 @@ export class CategoriesPage {
 
   protected editRule(rule: RuleDto): void {
     this.ruleDialog().open(rule);
+  }
+
+  /** No rule fits — open the editor in create mode with this category preselected (#53). */
+  protected newRuleFor(category: CategoryDto): void {
+    this.ruleDialog().open(null, null, { categoryId: category.id });
   }
 
   protected parentOptions(): CategoryDto[] {

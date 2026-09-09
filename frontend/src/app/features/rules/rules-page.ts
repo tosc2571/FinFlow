@@ -32,6 +32,16 @@ export class RulesPage {
   protected readonly testError = signal<string | null>(null);
   protected readonly reclassifyResult = signal<ReclassifyResult | null>(null);
 
+  /** Text filter (#53) — matches against the pattern and the target category's name. */
+  protected filterText = '';
+
+  protected get filteredRules(): RuleDto[] {
+    const term = this.filterText.trim().toLowerCase();
+    const rules = this.rulesService.rules();
+    if (!term) return rules;
+    return rules.filter((r) => r.pattern.toLowerCase().includes(term) || r.categoryName.toLowerCase().includes(term));
+  }
+
   // Form state (plain fields for ngModel).
   protected editingId: number | null = null;
   protected pattern = '';

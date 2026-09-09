@@ -17,6 +17,8 @@ export class RulePickerDialog {
   protected rulesService = inject(RulesService);
 
   @Output() picked = new EventEmitter<RuleDto>();
+  /** No existing rule fits — the caller should open the editor in create mode instead (#53). */
+  @Output() createNew = new EventEmitter<void>();
 
   protected readonly visible = signal(false);
   protected filterText = '';
@@ -33,6 +35,11 @@ export class RulePickerDialog {
   protected pick(rule: RuleDto): void {
     this.visible.set(false);
     this.picked.emit(rule);
+  }
+
+  protected pickCreateNew(): void {
+    this.visible.set(false);
+    this.createNew.emit();
   }
 
   protected get filteredRules(): RuleDto[] {

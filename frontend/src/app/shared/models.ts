@@ -43,6 +43,7 @@ export interface CategoryDto {
   parentCategoryId: number | null;
   isIncome: boolean;
   sortOrder: number;
+  transactionCount: number;
 }
 
 export interface RuleDto {
