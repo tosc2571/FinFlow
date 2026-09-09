@@ -4,12 +4,16 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../../core/api.service';
 import { CategoriesService } from '../../core/categories.service';
+import { RulesService } from '../../core/rules.service';
 import { onEnterSubmit } from '../../shared/keyboard';
 import { QuickCreateCategoryDialog } from '../../shared/quick-create-category-dialog';
+import { RuleEditDialog } from '../../shared/rule-edit-dialog';
+import { RulePickerDialog } from '../../shared/rule-picker-dialog';
 import {
   CategoryDto,
   ClassificationStatus,
   PagedTransactions,
+  RuleDto,
   STATUS_LABELS,
   TransactionDto,
   TransactionFilter,
@@ -17,7 +21,7 @@ import {
 
 @Component({
   selector: 'app-transactions-page',
-  imports: [FormsModule, DatePipe, DecimalPipe, QuickCreateCategoryDialog],
+  imports: [FormsModule, DatePipe, DecimalPipe, QuickCreateCategoryDialog, RuleEditDialog, RulePickerDialog],
   templateUrl: './transactions-page.html',
 })
 export class TransactionsPage {
@@ -25,11 +29,17 @@ export class TransactionsPage {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   protected categoriesService = inject(CategoriesService);
+  protected rulesService = inject(RulesService);
   protected categoryDialog = viewChild.required(QuickCreateCategoryDialog);
+  protected ruleDialog = viewChild.required(RuleEditDialog);
+  protected rulePicker = viewChild.required(RulePickerDialog);
 
   /** Transaction the "→ New category…" option was picked for; set right before the dialog
    * opens, consumed by onCategoryCreated once the user finishes the form. */
   private pendingCategoryTx: TransactionDto | null = null;
+
+  /** Transaction "+ Add to existing rule" was clicked for; consumed once a rule is picked. */
+  private pendingRuleTx: TransactionDto | null = null;
 
   protected onToolbarEnter(event: Event): void {
     onEnterSubmit(event, () => this.load(1));
@@ -80,6 +90,7 @@ export class TransactionsPage {
 
   constructor() {
     this.categoriesService.ensureLoaded();
+    this.rulesService.ensureLoaded();
     this.load(this.qp.get('page') ? Number(this.qp.get('page')) : 1);
     this.initialSyncDone = true;
   }
@@ -148,6 +159,32 @@ export class TransactionsPage {
     this.pendingCategoryTx = null;
     if (!t) return;
     this.api.patchTransaction(t.id, { categoryId: category.id }).subscribe(() => this.load(this.data()?.page ?? 1));
+  }
+
+  /** "Why is this Auto/Ignored?" (#51b) — open the rule that currently matches this row. */
+  protected openMatchedRule(t: TransactionDto): void {
+    if (t.matchedRuleId === null) return;
+    this.api.getRule(t.matchedRuleId).subscribe((rule) => {
+      this.ruleDialog().open(rule, { counterpartyName: t.counterpartyName, purpose: t.purpose });
+    });
+  }
+
+  /** "Attach this uncategorized transaction to an existing rule" (#51c). */
+  protected openRulePicker(t: TransactionDto): void {
+    this.pendingRuleTx = t;
+    this.rulePicker().open();
+  }
+
+  protected onRulePicked(rule: RuleDto): void {
+    const t = this.pendingRuleTx;
+    this.pendingRuleTx = null;
+    if (!t) return;
+    this.ruleDialog().open(rule, { counterpartyName: t.counterpartyName, purpose: t.purpose });
+  }
+
+  /** The dialog already re-ran classification server-side — just reload to show the result. */
+  protected onRuleSaved(): void {
+    this.load(this.data()?.page ?? 1);
   }
 
   protected setStatus(t: TransactionDto, status: ClassificationStatus): void {

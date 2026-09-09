@@ -22,11 +22,18 @@ public static class RuleEndpoints
                 .Select(r => new RuleDto(r.Id, r.Pattern, r.CategoryId, r.Category!.Name, r.Status, r.Priority, r.IsActive))
                 .ToList());
 
+        group.MapGet("/{id:int}", (int id, AppDbContext db) =>
+            db.ClassificationRules.AsNoTracking().Where(r => r.Id == id)
+                .Select(r => new RuleDto(r.Id, r.Pattern, r.CategoryId, r.Category!.Name, r.Status, r.Priority, r.IsActive))
+                .FirstOrDefault() is { } dto
+                ? Results.Ok(dto)
+                : Results.NotFound());
+
         group.MapPost("/", async (RuleRequest req, AppDbContext db) =>
         {
             if (Validate(req) is { } error) return error;
-            if (!await db.Categories.AnyAsync(c => c.Id == req.CategoryId))
-                return Results.BadRequest(new { error = $"Unknown category {req.CategoryId}." });
+            Category? category = await db.Categories.FindAsync(req.CategoryId);
+            if (category is null) return Results.BadRequest(new { error = $"Unknown category {req.CategoryId}." });
 
             ClassificationRule rule = new()
             {
@@ -38,7 +45,8 @@ public static class RuleEndpoints
             };
             db.ClassificationRules.Add(rule);
             await db.SaveChangesAsync();
-            return Results.Created($"/api/rules/{rule.Id}", new { rule.Id });
+            return Results.Created($"/api/rules/{rule.Id}",
+                new RuleDto(rule.Id, rule.Pattern, rule.CategoryId, category.Name, rule.Status, rule.Priority, rule.IsActive));
         });
 
         group.MapPut("/{id:int}", async (int id, RuleRequest req, AppDbContext db) =>
@@ -46,8 +54,8 @@ public static class RuleEndpoints
             ClassificationRule? rule = await db.ClassificationRules.FindAsync(id);
             if (rule is null) return Results.NotFound();
             if (Validate(req) is { } error) return error;
-            if (!await db.Categories.AnyAsync(c => c.Id == req.CategoryId))
-                return Results.BadRequest(new { error = $"Unknown category {req.CategoryId}." });
+            Category? category = await db.Categories.FindAsync(req.CategoryId);
+            if (category is null) return Results.BadRequest(new { error = $"Unknown category {req.CategoryId}." });
 
             rule.Pattern = req.Pattern;
             rule.CategoryId = req.CategoryId;
@@ -56,7 +64,7 @@ public static class RuleEndpoints
             rule.IsActive = req.IsActive;
             rule.UpdatedAt = DateTime.UtcNow;
             await db.SaveChangesAsync();
-            return Results.Ok(new { rule.Id });
+            return Results.Ok(new RuleDto(rule.Id, rule.Pattern, rule.CategoryId, category.Name, rule.Status, rule.Priority, rule.IsActive));
         });
 
         group.MapDelete("/{id:int}", async (int id, AppDbContext db) =>

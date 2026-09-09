@@ -87,6 +87,50 @@ public class ClassificationServiceTests : IDisposable
     }
 
     [Fact]
+    public void LoadRuleSet_MatchFor_ReturnsWinningRuleWithIdAndPattern()
+    {
+        using AppDbContext ctx = CreateContext();
+        Category groceries = new() { Name = "Lebensmittel" };
+        ctx.Categories.Add(groceries);
+        ctx.SaveChanges();
+        ClassificationRule rule = new()
+        {
+            Pattern = "REWE",
+            CategoryId = groceries.Id,
+            Status = ClassificationRuleStatus.Auto,
+        };
+        ctx.ClassificationRules.Add(rule);
+        ctx.SaveChanges();
+
+        RuleSet.Match? match = new ClassificationService(ctx).LoadRuleSet().MatchFor("REWE SAGT DANKE", "Einkauf");
+
+        Assert.NotNull(match);
+        Assert.Equal(rule.Id, match!.RuleId);
+        Assert.Equal("REWE", match.Pattern);
+        Assert.Equal(groceries.Id, match.CategoryId);
+    }
+
+    [Fact]
+    public void LoadRuleSet_MatchFor_NoRuleMatches_ReturnsNull()
+    {
+        using AppDbContext ctx = CreateContext();
+        Category groceries = new() { Name = "Lebensmittel" };
+        ctx.Categories.Add(groceries);
+        ctx.SaveChanges();
+        ctx.ClassificationRules.Add(new ClassificationRule
+        {
+            Pattern = "REWE",
+            CategoryId = groceries.Id,
+            Status = ClassificationRuleStatus.Auto,
+        });
+        ctx.SaveChanges();
+
+        RuleSet.Match? match = new ClassificationService(ctx).LoadRuleSet().MatchFor("Wohnbau GmbH", "Miete");
+
+        Assert.Null(match);
+    }
+
+    [Fact]
     public void TestPattern_InvalidRegex_Throws()
     {
         using AppDbContext ctx = CreateContext();

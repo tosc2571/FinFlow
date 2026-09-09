@@ -1,17 +1,21 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CategoryRequest } from '../../core/api.service';
 import { CategoriesService } from '../../core/categories.service';
+import { RulesService } from '../../core/rules.service';
 import { onEnterSubmit } from '../../shared/keyboard';
-import { CategoryDto } from '../../shared/models';
+import { RuleEditDialog } from '../../shared/rule-edit-dialog';
+import { CategoryDto, RuleDto } from '../../shared/models';
 
 @Component({
   selector: 'app-categories-page',
-  imports: [FormsModule],
+  imports: [FormsModule, RuleEditDialog],
   templateUrl: './categories-page.html',
 })
 export class CategoriesPage {
   protected categoriesService = inject(CategoriesService);
+  protected rulesService = inject(RulesService);
+  protected ruleDialog = viewChild.required(RuleEditDialog);
 
   protected onToolbarEnter(event: Event): void {
     onEnterSubmit(event, () => this.save());
@@ -25,11 +29,21 @@ export class CategoriesPage {
 
   constructor() {
     this.categoriesService.ensureLoaded();
+    this.rulesService.ensureLoaded();
   }
 
   protected parentName(category: CategoryDto): string {
     if (category.parentCategoryId === null) return '';
     return this.categoriesService.categories().find((c) => c.id === category.parentCategoryId)?.name ?? '';
+  }
+
+  /** Rules assigned to this category (#51) — clicking one opens it for editing right here. */
+  protected rulesFor(category: CategoryDto): RuleDto[] {
+    return this.rulesService.rules().filter((r) => r.categoryId === category.id);
+  }
+
+  protected editRule(rule: RuleDto): void {
+    this.ruleDialog().open(rule);
   }
 
   protected parentOptions(): CategoryDto[] {

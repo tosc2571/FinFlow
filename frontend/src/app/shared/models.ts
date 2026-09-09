@@ -24,6 +24,10 @@ export interface TransactionDto {
   classificationStatus: ClassificationStatus;
   importBatchId: number;
   contractId: number | null;
+  /** The rule that currently matches this transaction, derived on read (not persisted) — only
+   * set for Auto/Ignored; ManualOverride/InternalTransfer were set by hand, not by a rule. */
+  matchedRuleId: number | null;
+  matchedRulePattern: string | null;
 }
 
 export interface PagedTransactions {

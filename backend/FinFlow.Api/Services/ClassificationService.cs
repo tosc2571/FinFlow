@@ -12,19 +12,29 @@ namespace FinFlow.Api.Services;
 /// </summary>
 public sealed class RuleSet
 {
-    private readonly List<(Regex Regex, int CategoryId, ClassificationStatus Status)> _rules;
+    public sealed record Match(int RuleId, string Pattern, int CategoryId, ClassificationStatus Status);
 
-    internal RuleSet(List<(Regex, int, ClassificationStatus)> rules) => _rules = rules;
+    private readonly List<(Regex Regex, Match Match)> _rules;
+
+    internal RuleSet(List<(Regex, Match)> rules) => _rules = rules;
+
+    /// <summary>The first active rule (by priority) whose pattern matches, or null if none does —
+    /// used to show/edit "which rule caused this" without persisting a MatchedRuleId anywhere.</summary>
+    public Match? MatchFor(string? counterpartyName, string? purpose)
+    {
+        string text = $"{counterpartyName ?? ""} {purpose ?? ""}".Trim();
+        foreach ((Regex regex, Match match) in _rules)
+        {
+            if (regex.IsMatch(text))
+                return match;
+        }
+        return null;
+    }
 
     public (int? CategoryId, ClassificationStatus Status) Classify(string? counterpartyName, string? purpose)
     {
-        string text = $"{counterpartyName ?? ""} {purpose ?? ""}".Trim();
-        foreach ((Regex regex, int categoryId, ClassificationStatus status) in _rules)
-        {
-            if (regex.IsMatch(text))
-                return (categoryId, status);
-        }
-        return (null, ClassificationStatus.NeedsReview);
+        Match? match = MatchFor(counterpartyName, purpose);
+        return match is null ? (null, ClassificationStatus.NeedsReview) : (match.CategoryId, match.Status);
     }
 }
 
@@ -41,8 +51,7 @@ public class ClassificationService(AppDbContext db)
             .AsEnumerable()
             .Select(r => (
                 new Regex(r.Pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant),
-                r.CategoryId,
-                MapStatus(r.Status)))]);
+                new RuleSet.Match(r.Id, r.Pattern, r.CategoryId, MapStatus(r.Status))))]);
 
     /// <summary>
     /// Re-runs classification over all transactions except manual overrides —

@@ -356,6 +356,45 @@ button.danger {
   gap: 0.4rem;
 }
 
+.rule-picker-list {
+  max-height: 40vh;
+  overflow-y: auto;
+  border: 1px solid #e1e0d9;
+  border-radius: 6px;
+}
+
+.rule-picker-item {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+  width: 100%;
+  text-align: left;
+  border: none;
+  border-radius: 0;
+  border-bottom: 1px solid #e1e0d9;
+  background: transparent;
+}
+
+.rule-picker-item:last-child {
+  border-bottom: none;
+}
+
+.rule-picker-list > p.muted {
+  padding: 0.6rem;
+  margin: 0;
+}
+
+.rule-chip {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  margin: 0.1rem 0.2rem 0.1rem 0;
+  background: #e3edf9;
+  border-color: #c7dbf3;
+  color: #1c5cab;
+}
+
 .modal-actions {
   display: flex;
   gap: 0.5rem;

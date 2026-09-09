@@ -1,0 +1,40 @@
+@if (visible()) {
+  <div class="modal-backdrop" (click)="cancel()">
+    <div class="modal-panel" (click)="$event.stopPropagation()" (keyup.enter)="onDialogEnter($event)">
+      <h2>Edit rule</h2>
+      <label>Pattern (regex) <input type="text" [(ngModel)]="pattern" placeholder="e.g. REWE|ALDI|LIDL" /></label>
+      <label>
+        Category
+        <select [(ngModel)]="categoryId">
+          <option value="">— choose —</option>
+          @for (c of categoriesService.categories(); track c.id) {
+            <option [ngValue]="c.id">{{ c.name }}</option>
+          }
+        </select>
+      </label>
+      <label>
+        Status
+        <select [(ngModel)]="status">
+          <option value="Auto">Auto</option>
+          <option value="NeedsReview">Needs review</option>
+          <option value="Ignore">Ignore</option>
+        </select>
+      </label>
+      <label>Priority <input type="number" [(ngModel)]="priority" /></label>
+      <label class="modal-checkbox"><input type="checkbox" [(ngModel)]="isActive" /> active</label>
+      @if (matchesTransaction !== null) {
+        @if (matchesTransaction) {
+          <p class="badge auto">✓ matches this transaction</p>
+        } @else {
+          <p class="badge failed">✗ doesn't match this transaction yet</p>
+        }
+      }
+      <div class="modal-actions">
+        <button class="primary" [disabled]="!canSave || saving()" (click)="save()">
+          {{ saving() ? 'Saving …' : 'Save' }}
+        </button>
+        <button (click)="cancel()">Cancel</button>
+      </div>
+    </div>
+  </div>
+}
