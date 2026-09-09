@@ -110,12 +110,16 @@ export class ApiService {
     return this.http.get<RuleDto[]>('/api/rules/');
   }
 
-  createRule(req: RuleRequest): Observable<unknown> {
-    return this.http.post('/api/rules/', req);
+  getRule(id: number): Observable<RuleDto> {
+    return this.http.get<RuleDto>(`/api/rules/${id}`);
   }
 
-  updateRule(id: number, req: RuleRequest): Observable<unknown> {
-    return this.http.put(`/api/rules/${id}`, req);
+  createRule(req: RuleRequest): Observable<RuleDto> {
+    return this.http.post<RuleDto>('/api/rules/', req);
+  }
+
+  updateRule(id: number, req: RuleRequest): Observable<RuleDto> {
+    return this.http.put<RuleDto>(`/api/rules/${id}`, req);
   }
 
   deleteRule(id: number): Observable<unknown> {

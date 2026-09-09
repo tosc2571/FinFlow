@@ -1,0 +1,21 @@
+@if (visible()) {
+  <div class="modal-backdrop" (click)="cancel()">
+    <div class="modal-panel" (click)="$event.stopPropagation()">
+      <h2>Add to existing rule</h2>
+      <label>Filter <input type="text" [(ngModel)]="filterText" placeholder="pattern or category" /></label>
+      <div class="rule-picker-list">
+        @for (rule of filteredRules; track rule.id) {
+          <button type="button" class="rule-picker-item" (click)="pick(rule)">
+            <code>{{ rule.pattern }}</code>
+            <span class="muted">→ {{ rule.categoryName }}</span>
+          </button>
+        } @empty {
+          <p class="muted">No rules match "{{ filterText }}".</p>
+        }
+      </div>
+      <div class="modal-actions">
+        <button (click)="cancel()">Cancel</button>
+      </div>
+    </div>
+  </div>
+}

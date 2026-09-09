@@ -3,6 +3,7 @@ import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService, RuleRequest } from '../../core/api.service';
 import { CategoriesService } from '../../core/categories.service';
+import { RulesService } from '../../core/rules.service';
 import { onEnterSubmit } from '../../shared/keyboard';
 import { QuickCreateCategoryDialog } from '../../shared/quick-create-category-dialog';
 import { CategoryDto, PatternTestResult, ReclassifyResult, RuleDto, RuleStatus } from '../../shared/models';
@@ -15,6 +16,7 @@ import { CategoryDto, PatternTestResult, ReclassifyResult, RuleDto, RuleStatus }
 export class RulesPage {
   private api = inject(ApiService);
   protected categoriesService = inject(CategoriesService);
+  protected rulesService = inject(RulesService);
   protected categoryDialog = viewChild.required(QuickCreateCategoryDialog);
   private testTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -26,7 +28,6 @@ export class RulesPage {
    * from any real category id (number) or the empty "— choose —" placeholder. */
   protected readonly manageCategoriesOption = '__manage__';
 
-  protected readonly rules = signal<RuleDto[]>([]);
   protected readonly testResult = signal<PatternTestResult | null>(null);
   protected readonly testError = signal<string | null>(null);
   protected readonly reclassifyResult = signal<ReclassifyResult | null>(null);
@@ -40,12 +41,8 @@ export class RulesPage {
   protected isActive = true;
 
   constructor() {
-    this.loadRules();
+    this.rulesService.ensureLoaded();
     this.categoriesService.ensureLoaded();
-  }
-
-  protected loadRules(): void {
-    this.api.getRules().subscribe((r) => this.rules.set(r));
   }
 
   /** Live preview: debounce, then dry-run the pattern against existing transactions. */
@@ -120,16 +117,13 @@ export class RulesPage {
       priority: this.priority,
       isActive: this.isActive,
     };
-    const call = this.editingId === null ? this.api.createRule(req) : this.api.updateRule(this.editingId, req);
-    call.subscribe(() => {
-      this.resetForm();
-      this.loadRules();
-    });
+    const call = this.editingId === null ? this.rulesService.create(req) : this.rulesService.update(this.editingId, req);
+    call.subscribe(() => this.resetForm());
   }
 
   protected delete(rule: RuleDto): void {
     if (!confirm(`Delete rule "${rule.pattern}"?`)) return;
-    this.api.deleteRule(rule.id).subscribe(() => this.loadRules());
+    this.rulesService.delete(rule.id).subscribe();
   }
 
   protected reclassify(): void {

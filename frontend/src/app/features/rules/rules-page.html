@@ -97,7 +97,7 @@
     </tr>
   </thead>
   <tbody>
-    @for (rule of rules(); track rule.id) {
+    @for (rule of rulesService.rules(); track rule.id) {
       <tr>
         <td>{{ rule.priority }}</td>
         <td><code>{{ rule.pattern }}</code></td>

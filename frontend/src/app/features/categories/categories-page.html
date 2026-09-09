@@ -35,6 +35,7 @@
       <th>Name</th>
       <th>Parent</th>
       <th>Income</th>
+      <th>Rules</th>
       <th></th>
     </tr>
   </thead>
@@ -46,15 +47,24 @@
         <td class="muted">{{ parentName(c) }}</td>
         <td>{{ c.isIncome ? '✓' : '—' }}</td>
         <td>
+          @for (rule of rulesFor(c); track rule.id) {
+            <button type="button" class="rule-chip" (click)="editRule(rule)">{{ rule.pattern }}</button>
+          } @empty {
+            <span class="muted">—</span>
+          }
+        </td>
+        <td>
           <button (click)="edit(c)">Edit</button>
           <button class="danger" (click)="delete(c)">Delete</button>
         </td>
       </tr>
     } @empty {
       <tr>
-        <td colspan="5" class="muted">No categories yet — create one above, then add classification rules for it.</td>
+        <td colspan="6" class="muted">No categories yet — create one above, then add classification rules for it.</td>
       </tr>
     }
   </tbody>
 </table>
 </div>
+
+<app-rule-edit-dialog />

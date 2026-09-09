@@ -80,6 +80,14 @@
               }
               <option [ngValue]="manageCategoriesOption">→ New category…</option>
             </select>
+            @if (t.matchedRuleId !== null) {
+              <button type="button" class="rule-chip" title="Classified by this rule — click to edit"
+                (click)="openMatchedRule(t)">
+                {{ t.matchedRulePattern }}
+              </button>
+            } @else if (t.categoryId === null) {
+              <button type="button" (click)="openRulePicker(t)">+ Add to existing rule</button>
+            }
           </td>
           <td>
             <span class="badge" [class]="'badge ' + t.classificationStatus.toLowerCase()">
@@ -118,3 +126,5 @@
 }
 
 <app-quick-create-category-dialog (created)="onCategoryCreated($event)" />
+<app-rule-edit-dialog (saved)="onRuleSaved()" />
+<app-rule-picker-dialog (picked)="onRulePicked($event)" />
