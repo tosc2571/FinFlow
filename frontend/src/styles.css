@@ -396,13 +396,22 @@ button.danger {
 }
 
 /* Transactions row "Classification" cell (#55) — one button opening the combined
-   category+rule dialog, instead of an inline <select> next to a separate rule chip. */
+   category+rule dialog, instead of an inline <select> next to a separate rule chip.
+   Capped width + ellipsis: a rule with many alternation terms (REWE|ALDI|LIDL|...)
+   used to stretch the whole column — full text is still available via the title tooltip. */
 .classify-cell {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 0.2rem;
   text-align: left;
+  max-width: 14rem;
+}
+
+.classify-cell span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 

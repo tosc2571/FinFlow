@@ -74,9 +74,9 @@
           <td class="amount" [class.neg]="t.amount < 0">{{ t.amount | number: '1.2-2' }} €</td>
           <td>
             <button type="button" class="classify-cell" (click)="classify(t)">
-              <span>{{ t.categoryName ?? '— uncategorized —' }}</span>
+              <span [title]="t.categoryName">{{ t.categoryName ?? '— uncategorized —' }}</span>
               @if (t.matchedRulePattern) {
-                <span class="rule-chip">{{ t.matchedRulePattern }}</span>
+                <span class="rule-chip" [title]="t.matchedRulePattern">{{ t.matchedRulePattern }}</span>
               }
             </button>
           </td>
