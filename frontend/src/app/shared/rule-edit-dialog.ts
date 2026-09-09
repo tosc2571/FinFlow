@@ -12,13 +12,17 @@ export interface RuleMatchContext {
   purpose: string | null;
 }
 
+/** Defaults to prefill when opening in create mode (#53) — e.g. the counterparty name of the
+ * transaction that had no matching rule, as a starting point for a brand new pattern. */
+export interface RuleCreateDefaults {
+  pattern?: string;
+  categoryId?: number;
+}
+
 /**
- * Quick "edit this rule" modal, opened from the Categories page (#51: which rule leads to this
- * category) and the Transactions page (which rule classified this row / attach this row to an
- * existing rule) — editing a rule without leaving whatever page you were reviewing.
- *
- * Always edits an existing rule (never creates one) — the Rules page's own inline form remains
- * the place to create new rules from scratch.
+ * Quick "create or edit a rule" modal, opened from the Categories page and the Transactions page
+ * (#51: which rule leads to this category; #53: also let a new rule be created from there) —
+ * without leaving whatever page you were reviewing.
  */
 @Component({
   selector: 'app-rule-edit-dialog',
@@ -34,7 +38,8 @@ export class RuleEditDialog {
 
   protected readonly visible = signal(false);
   protected readonly saving = signal(false);
-  private ruleId = 0;
+  /** null while creating a new rule; the existing rule's id while editing one. */
+  private ruleId: number | null = null;
   protected pattern = '';
   protected categoryId: number | '' = '';
   protected status: RuleStatus = 'NeedsReview';
@@ -44,15 +49,24 @@ export class RuleEditDialog {
   /** Set only when opened from a specific transaction — drives the live match indicator. */
   protected matchContext: RuleMatchContext | null = null;
 
-  open(rule: RuleDto, matchContext: RuleMatchContext | null = null): void {
-    this.ruleId = rule.id;
-    this.pattern = rule.pattern;
-    this.categoryId = rule.categoryId;
-    this.status = rule.status;
-    this.priority = rule.priority;
-    this.isActive = rule.isActive;
+  /** Opens in edit mode for an existing rule, or create mode when `rule` is null. */
+  open(rule: RuleDto | null, matchContext: RuleMatchContext | null = null, createDefaults: RuleCreateDefaults = {}): void {
+    this.ruleId = rule?.id ?? null;
+    this.pattern = rule?.pattern ?? createDefaults.pattern ?? '';
+    this.categoryId = rule?.categoryId ?? createDefaults.categoryId ?? '';
+    // Creating from a specific transaction (case C) means "auto-classify this going forward" —
+    // defaulting to NeedsReview would leave that very transaction looking unresolved. Creating
+    // from Categories (no transaction in view) keeps the cautious NeedsReview default, same as
+    // the standalone Rules page.
+    this.status = rule?.status ?? (matchContext ? 'Auto' : 'NeedsReview');
+    this.priority = rule?.priority ?? 100;
+    this.isActive = rule?.isActive ?? true;
     this.matchContext = matchContext;
     this.visible.set(true);
+  }
+
+  protected get isCreating(): boolean {
+    return this.ruleId === null;
   }
 
   /** null when there's no transaction to check against (case A/B without one); otherwise
@@ -90,8 +104,9 @@ export class RuleEditDialog {
       isActive: this.isActive,
     };
     this.saving.set(true);
-    this.rulesService.update(this.ruleId, req).subscribe((rule) => {
-      // Make the edit visible right away wherever it was opened from, not just next time
+    const call = this.ruleId === null ? this.rulesService.create(req) : this.rulesService.update(this.ruleId, req);
+    call.subscribe((rule) => {
+      // Make the change visible right away wherever it was opened from, not just next time
       // someone clicks "Re-run classification" on the Rules page.
       this.api.reclassify().subscribe(() => {
         this.saving.set(false);

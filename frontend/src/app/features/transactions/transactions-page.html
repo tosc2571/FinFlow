@@ -127,4 +127,4 @@
 
 <app-quick-create-category-dialog (created)="onCategoryCreated($event)" />
 <app-rule-edit-dialog (saved)="onRuleSaved()" />
-<app-rule-picker-dialog (picked)="onRulePicked($event)" />
+<app-rule-picker-dialog (picked)="onRulePicked($event)" (createNew)="onRuleCreateNew()" />

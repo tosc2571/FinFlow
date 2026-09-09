@@ -1,7 +1,7 @@
 @if (visible()) {
   <div class="modal-backdrop" (click)="cancel()">
     <div class="modal-panel" (click)="$event.stopPropagation()" (keyup.enter)="onDialogEnter($event)">
-      <h2>Edit rule</h2>
+      <h2>{{ isCreating ? 'New rule' : 'Edit rule' }}</h2>
       <label>Pattern (regex) <input type="text" [(ngModel)]="pattern" placeholder="e.g. REWE|ALDI|LIDL" /></label>
       <label>
         Category
@@ -31,7 +31,7 @@
       }
       <div class="modal-actions">
         <button class="primary" [disabled]="!canSave || saving()" (click)="save()">
-          {{ saving() ? 'Saving …' : 'Save' }}
+          {{ saving() ? 'Saving …' : isCreating ? 'Create' : 'Save' }}
         </button>
         <button (click)="cancel()">Cancel</button>
       </div>

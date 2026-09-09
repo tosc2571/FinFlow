@@ -80,6 +80,8 @@
   @if (reclassifyResult(); as r) {
     <span class="muted">{{ r.reclassified }} reclassified, {{ r.skippedManualOverride }} manual override(s) kept.</span>
   }
+  <span style="flex: 1"></span>
+  <label>Filter <input type="text" [(ngModel)]="filterText" placeholder="pattern or category" /></label>
 </div>
 
 <app-quick-create-category-dialog (created)="onCategoryCreated($event)" />
@@ -97,7 +99,7 @@
     </tr>
   </thead>
   <tbody>
-    @for (rule of rulesService.rules(); track rule.id) {
+    @for (rule of filteredRules; track rule.id) {
       <tr>
         <td>{{ rule.priority }}</td>
         <td><code>{{ rule.pattern }}</code></td>
@@ -112,7 +114,11 @@
     } @empty {
       <tr>
         <td colspan="6" class="muted">
-          No rules yet — create one above. Imported transactions without a matching rule land in "Needs review".
+          @if (filterText.trim()) {
+            No rules match "{{ filterText }}".
+          } @else {
+            No rules yet — create one above. Imported transactions without a matching rule land in "Needs review".
+          }
         </td>
       </tr>
     }

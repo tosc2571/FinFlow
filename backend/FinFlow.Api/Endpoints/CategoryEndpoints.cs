@@ -7,7 +7,7 @@ namespace FinFlow.Api.Endpoints;
 public static class CategoryEndpoints
 {
     public record CategoryRequest(string Name, int? ParentCategoryId, bool IsIncome, int SortOrder);
-    public record CategoryDto(int Id, string Name, int? ParentCategoryId, bool IsIncome, int SortOrder);
+    public record CategoryDto(int Id, string Name, int? ParentCategoryId, bool IsIncome, int SortOrder, int TransactionCount);
     public record CategoryTreeNode(int Id, string Name, bool IsIncome, int SortOrder, List<CategoryTreeNode> Children);
 
     public static void MapCategoryEndpoints(this WebApplication app)
@@ -17,7 +17,7 @@ public static class CategoryEndpoints
         group.MapGet("/", (AppDbContext db) =>
             db.Categories.AsNoTracking()
                 .OrderBy(c => c.SortOrder).ThenBy(c => c.Name)
-                .Select(c => new CategoryDto(c.Id, c.Name, c.ParentCategoryId, c.IsIncome, c.SortOrder))
+                .Select(c => new CategoryDto(c.Id, c.Name, c.ParentCategoryId, c.IsIncome, c.SortOrder, c.Transactions.Count))
                 .ToList());
 
         group.MapGet("/tree", (AppDbContext db) =>
@@ -40,8 +40,9 @@ public static class CategoryEndpoints
             };
             db.Categories.Add(category);
             await db.SaveChangesAsync();
+            // A brand-new category can't have any transactions yet.
             return Results.Created($"/api/categories/{category.Id}",
-                new CategoryDto(category.Id, category.Name, category.ParentCategoryId, category.IsIncome, category.SortOrder));
+                new CategoryDto(category.Id, category.Name, category.ParentCategoryId, category.IsIncome, category.SortOrder, TransactionCount: 0));
         });
 
         group.MapPut("/{id:int}", async (int id, CategoryRequest req, AppDbContext db) =>
@@ -56,7 +57,8 @@ public static class CategoryEndpoints
             category.IsIncome = req.IsIncome;
             category.SortOrder = req.SortOrder;
             await db.SaveChangesAsync();
-            return Results.Ok(new CategoryDto(category.Id, category.Name, category.ParentCategoryId, category.IsIncome, category.SortOrder));
+            int transactionCount = await db.Transactions.CountAsync(t => t.CategoryId == category.Id);
+            return Results.Ok(new CategoryDto(category.Id, category.Name, category.ParentCategoryId, category.IsIncome, category.SortOrder, transactionCount));
         });
 
         group.MapDelete("/{id:int}", async (int id, AppDbContext db) =>

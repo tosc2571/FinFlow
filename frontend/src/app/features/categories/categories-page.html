@@ -27,6 +27,10 @@
   </p>
 </div>
 
+<div class="toolbar">
+  <label>Filter <input type="text" [(ngModel)]="filterText" placeholder="category name" /></label>
+</div>
+
 <div class="table-scroll">
 <table>
   <thead>
@@ -35,23 +39,30 @@
       <th>Name</th>
       <th>Parent</th>
       <th>Income</th>
+      <th class="amount">Transactions</th>
       <th>Rules</th>
       <th></th>
     </tr>
   </thead>
   <tbody>
-    @for (c of categoriesService.categories(); track c.id) {
+    @for (c of filteredCategories; track c.id) {
       <tr>
         <td>{{ c.sortOrder }}</td>
         <td>{{ c.name }}</td>
         <td class="muted">{{ parentName(c) }}</td>
         <td>{{ c.isIncome ? '✓' : '—' }}</td>
+        <td class="amount">
+          @if (c.transactionCount > 0) {
+            <a [routerLink]="['/transactions']" [queryParams]="{ categoryId: c.id }">{{ c.transactionCount }}</a>
+          } @else {
+            <span class="muted">0</span>
+          }
+        </td>
         <td>
           @for (rule of rulesFor(c); track rule.id) {
             <button type="button" class="rule-chip" (click)="editRule(rule)">{{ rule.pattern }}</button>
-          } @empty {
-            <span class="muted">—</span>
           }
+          <button type="button" (click)="newRuleFor(c)">+ New rule</button>
         </td>
         <td>
           <button (click)="edit(c)">Edit</button>
@@ -60,7 +71,13 @@
       </tr>
     } @empty {
       <tr>
-        <td colspan="6" class="muted">No categories yet — create one above, then add classification rules for it.</td>
+        <td colspan="7" class="muted">
+          @if (filterText.trim()) {
+            No categories match "{{ filterText }}".
+          } @else {
+            No categories yet — create one above, then add classification rules for it.
+          }
+        </td>
       </tr>
     }
   </tbody>
