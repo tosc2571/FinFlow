@@ -39,21 +39,19 @@ export class TransactionsPage {
     'InternalTransfer',
   ];
 
-  // Filter form state (plain fields — ngModel; zoneless CD runs after template events). Seeded
-  // from the URL's query params so a reload (or a pasted link) restores the same filtered view
-  // instead of always resetting to today's year — see #35. `qp` is read once here; KeepAliveRouteReuseStrategy
-  // means this constructor never reruns for SPA navigation, only for a fresh app load.
-  private qp = this.route.snapshot.queryParamMap;
-  protected year: number | null = this.qp.has('year')
-    ? this.qp.get('year')
-      ? Number(this.qp.get('year'))
-      : null
-    : new Date().getFullYear();
-  protected contains = this.qp.get('contains') ?? '';
-  protected bank = this.qp.get('bank') ?? '';
-  protected status = (this.qp.get('status') ?? '') as ClassificationStatus | '';
-  protected categoryId: number | '' = this.qp.get('categoryId') ? Number(this.qp.get('categoryId')) : '';
-  protected sort = this.qp.get('sort') ?? 'date';
+  // Filter form state (plain fields — ngModel; zoneless CD runs after template events). Re-seeded
+  // from the URL's query params on every change, not just once — see #35 for why the URL is the
+  // source of truth, and #68: KeepAliveRouteReuseStrategy keeps this component instance alive
+  // across navigation, so a link into this page with different query params (e.g. a category's
+  // transaction count) needs an active subscription to be picked up, not just a one-time read at
+  // construction — otherwise the page silently keeps showing the previous filter/data until a
+  // full reload.
+  protected year: number | null = null;
+  protected contains = '';
+  protected bank = '';
+  protected status: ClassificationStatus | '' = '';
+  protected categoryId: number | '' = '';
+  protected sort = 'date';
 
   protected readonly pageSize = 50;
   protected readonly data = signal<PagedTransactions | null>(null);
@@ -71,7 +69,18 @@ export class TransactionsPage {
 
   constructor() {
     this.categoriesService.ensureLoaded();
-    this.load(this.qp.get('page') ? Number(this.qp.get('page')) : 1);
+    // queryParamMap emits the current value synchronously on subscribe, so this also does the
+    // initial parse — then keeps firing on every later navigation into this same, kept-alive
+    // component instance (e.g. the Categories page's transaction-count link).
+    this.route.queryParamMap.subscribe((qp) => {
+      this.year = qp.has('year') ? (qp.get('year') ? Number(qp.get('year')) : null) : new Date().getFullYear();
+      this.contains = qp.get('contains') ?? '';
+      this.bank = qp.get('bank') ?? '';
+      this.status = (qp.get('status') ?? '') as ClassificationStatus | '';
+      this.categoryId = qp.get('categoryId') ? Number(qp.get('categoryId')) : '';
+      this.sort = qp.get('sort') ?? 'date';
+      this.load(qp.get('page') ? Number(qp.get('page')) : 1);
+    });
     this.initialSyncDone = true;
   }
 

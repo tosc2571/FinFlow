@@ -49,7 +49,7 @@
     <td>{{ c.isIncome ? '✓' : '—' }}</td>
     <td class="amount">
       @if (c.transactionCount > 0) {
-        <a [routerLink]="['/transactions']" [queryParams]="{ categoryId: c.id, year: '' }">{{ c.transactionCount }}</a>
+        <a [routerLink]="['/transactions']" [queryParams]="{ categoryId: c.id, year: '', sort: 'date-desc' }">{{ c.transactionCount }}</a>
       } @else {
         <span class="muted">0</span>
       }
