@@ -56,6 +56,10 @@ public static class ImportEndpoints
                     b.DuplicateCount,
                     Status = b.Status.ToString(),
                     b.ErrorMessage,
+                    // The date span actually covered by this batch's persisted transactions — a
+                    // duplicate-only batch has none, so both are null (#62).
+                    OldestTransactionDate = b.Transactions.Min(t => t.BookingDate),
+                    NewestTransactionDate = b.Transactions.Max(t => t.BookingDate),
                 })
                 .ToList());
 
@@ -71,6 +75,8 @@ public static class ImportEndpoints
                     b.DuplicateCount,
                     Status = b.Status.ToString(),
                     b.ErrorMessage,
+                    OldestTransactionDate = b.Transactions.Min(t => t.BookingDate),
+                    NewestTransactionDate = b.Transactions.Max(t => t.BookingDate),
                 })
                 .FirstOrDefault() is { } batch
                 ? Results.Ok(batch)
