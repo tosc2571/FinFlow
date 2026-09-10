@@ -415,13 +415,41 @@ button.danger {
   white-space: nowrap;
 }
 
-/* Categories tree expand/collapse toggle (#56) */
+/* Categories tree (#56/#64) — a parent row (has sub-categories) and a plain top-level row with
+   none used to look almost identical: the only difference was a tiny toggle glyph that either
+   rendered or didn't, with nothing reserving its space, so leaf rows' names even sat slightly
+   further left. Now every row reserves the same leading slot (toggle / connector / blank
+   spacer), and a parent's name is bold with a colored toggle so it reads as a group at a glance;
+   a child row gets a muted "↳" connector so it reads as nested even before the indent registers. */
+.tree-toggle,
+.tree-connector,
+.tree-spacer {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.1rem;
+  margin-right: 0.3rem;
+}
+
 .tree-toggle {
-  padding: 0 0.3rem;
+  padding: 0;
   border: none;
   background: transparent;
+  color: #2a78d6;
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+
+.tree-connector {
+  color: #a8a69c;
+}
+
+.category-parent-name {
+  font-weight: 600;
+}
+
+.category-child-name {
   color: #52514e;
-  margin-right: 0.3rem;
 }
 
 .modal-actions {
