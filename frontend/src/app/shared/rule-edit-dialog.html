@@ -3,21 +3,24 @@
     <div class="modal-panel" (click)="$event.stopPropagation()" (keyup.enter)="onDialogEnter($event)">
       <h2>{{ isCreating ? 'New rule' : 'Edit rule' }}</h2>
       <label>Pattern (regex) <input type="text" [(ngModel)]="pattern" placeholder="e.g. REWE|ALDI|LIDL" /></label>
-      <label>
-        Category
-        <select [(ngModel)]="categoryId">
-          <option value="">— choose —</option>
-          @for (c of categoriesService.categories(); track c.id) {
-            <option [ngValue]="c.id">{{ c.name }}</option>
-          }
-        </select>
-      </label>
+      @if (needsCategory) {
+        <label>
+          Category
+          <select [(ngModel)]="categoryId">
+            <option value="">— choose —</option>
+            @for (c of categoriesService.categories(); track c.id) {
+              <option [ngValue]="c.id">{{ c.name }}</option>
+            }
+          </select>
+        </label>
+      }
       <label>
         Status
         <select [(ngModel)]="status">
           <option value="Auto">Auto</option>
           <option value="NeedsReview">Needs review</option>
           <option value="Ignore">Ignore</option>
+          <option value="InternalTransfer">Internal transfer</option>
         </select>
       </label>
       <label>Priority <input type="number" [(ngModel)]="priority" /></label>

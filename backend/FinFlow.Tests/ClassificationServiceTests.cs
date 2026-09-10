@@ -131,6 +131,56 @@ public class ClassificationServiceTests : IDisposable
     }
 
     [Fact]
+    public void LoadRuleSet_MatchFor_IgnoresStrayWhitespaceInsideWords()
+    {
+        // Real-world example (#66, anonymized): some bank exports insert a stray space mid-word
+        // (a line-wrap artifact), splitting "Musterstrasse" into "Muster strasse" at an
+        // arbitrary point — a correctly-spelled pattern must still match.
+        using AppDbContext ctx = CreateContext();
+        Category parking = new() { Name = "Parkgarage" };
+        ctx.Categories.Add(parking);
+        ctx.SaveChanges();
+        ClassificationRule rule = new()
+        {
+            Pattern = "Musterstrasse",
+            CategoryId = parking.Id,
+            Status = ClassificationRuleStatus.Auto,
+        };
+        ctx.ClassificationRules.Add(rule);
+        ctx.SaveChanges();
+
+        RuleSet.Match? match = new ClassificationService(ctx).LoadRuleSet()
+            .MatchFor(null, "LASTSCHRIFT WEG Muster strasse 10 (Parkgarage) TEG P arkgarage");
+
+        Assert.NotNull(match);
+        Assert.Equal(rule.Id, match!.RuleId);
+    }
+
+    [Fact]
+    public void ReclassifyAll_InternalTransferRule_ClearsCategoryAndSetsStatus()
+    {
+        using AppDbContext ctx = CreateContext();
+        ImportBatch batch = new() { SourceFileName = "seed.csv", DetectedBank = "dkb", Status = ImportStatus.Completed };
+        ctx.ImportBatches.Add(batch);
+        ctx.SaveChanges();
+        ctx.ClassificationRules.Add(new ClassificationRule
+        {
+            Pattern = "EIGENES KONTO",
+            CategoryId = null,
+            Status = ClassificationRuleStatus.InternalTransfer,
+        });
+        Transaction matching = Tx(batch, "EIGENES KONTO SPARBUCH", "Umbuchung");
+        ctx.Transactions.Add(matching);
+        ctx.SaveChanges();
+
+        new ClassificationService(ctx).ReclassifyAll();
+
+        Transaction reclassified = ctx.Transactions.Single(t => t.Id == matching.Id);
+        Assert.Null(reclassified.CategoryId);
+        Assert.Equal(ClassificationStatus.InternalTransfer, reclassified.ClassificationStatus);
+    }
+
+    [Fact]
     public void TestPattern_InvalidRegex_Throws()
     {
         using AppDbContext ctx = CreateContext();

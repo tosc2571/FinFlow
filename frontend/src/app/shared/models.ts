@@ -1,7 +1,7 @@
 // DTO shapes mirroring backend/FinFlow.Api (enums arrive as strings via JsonStringEnumConverter).
 
 export type ClassificationStatus = 'Auto' | 'NeedsReview' | 'Ignored' | 'ManualOverride' | 'InternalTransfer';
-export type RuleStatus = 'Auto' | 'NeedsReview' | 'Ignore';
+export type RuleStatus = 'Auto' | 'NeedsReview' | 'Ignore' | 'InternalTransfer';
 export type ImportStatus = 'Completed' | 'Failed';
 export type ContractPeriod = 'Monthly' | 'Quarterly' | 'SemiAnnually' | 'Annually';
 export type OccurrenceStatus = 'Matched' | 'AmountDeviation' | 'Missing' | 'Upcoming';
@@ -49,8 +49,9 @@ export interface CategoryDto {
 export interface RuleDto {
   id: number;
   pattern: string;
-  categoryId: number;
-  categoryName: string;
+  /** Null only for an InternalTransfer rule — it needs no category. */
+  categoryId: number | null;
+  categoryName: string | null;
   status: RuleStatus;
   priority: number;
   isActive: boolean;

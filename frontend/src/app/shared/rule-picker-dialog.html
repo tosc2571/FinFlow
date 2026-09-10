@@ -7,7 +7,7 @@
         @for (rule of filteredRules; track rule.id) {
           <button type="button" class="rule-picker-item" (click)="pick(rule)">
             <code>{{ rule.pattern }}</code>
-            <span class="muted">→ {{ rule.categoryName }}</span>
+            <span class="muted">→ {{ rule.categoryName ?? 'Internal transfer' }}</span>
           </button>
         } @empty {
           <p class="muted">No rules match "{{ filterText }}".</p>
