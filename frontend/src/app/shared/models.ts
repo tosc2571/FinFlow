@@ -84,6 +84,10 @@ export interface ImportBatchDto {
   duplicateCount: number;
   status: ImportStatus;
   errorMessage: string | null;
+  /** Date span of this batch's persisted transactions — both null when every row in the
+   * file was a duplicate (nothing was persisted to have a date). */
+  oldestTransactionDate: string | null;
+  newestTransactionDate: string | null;
 }
 
 export interface DashboardSummary {
