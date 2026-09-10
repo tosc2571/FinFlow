@@ -71,12 +71,15 @@ export class RuleEditDialog {
 
   /** null when there's no transaction to check against (case A/B without one); otherwise
    * whether the pattern, as currently typed, matches that transaction's counterparty+purpose —
-   * same "counterparty + purpose" text RuleSet.MatchFor matches against server-side. */
+   * mirrors RuleSet.MatchFor server-side, including stripping all whitespace from both sides
+   * first (some bank exports insert a stray space mid-word — see #66 — so matching ignores
+   * whitespace entirely rather than trying to guess where a "real" space belongs). */
   protected get matchesTransaction(): boolean | null {
     if (!this.matchContext) return null;
-    const text = `${this.matchContext.counterpartyName ?? ''} ${this.matchContext.purpose ?? ''}`.trim();
+    const text = `${this.matchContext.counterpartyName ?? ''} ${this.matchContext.purpose ?? ''}`.replace(/\s+/g, '');
+    const pattern = this.pattern.replace(/\s+/g, '');
     try {
-      return new RegExp(this.pattern, 'i').test(text);
+      return new RegExp(pattern, 'i').test(text);
     } catch {
       return false;
     }
@@ -90,15 +93,20 @@ export class RuleEditDialog {
     this.visible.set(false);
   }
 
+  /** Internal-transfer rules need no category — every other status still requires one. */
+  protected get needsCategory(): boolean {
+    return this.status !== 'InternalTransfer';
+  }
+
   protected get canSave(): boolean {
-    return this.pattern.trim() !== '' && this.categoryId !== '';
+    return this.pattern.trim() !== '' && (!this.needsCategory || this.categoryId !== '');
   }
 
   protected save(): void {
     if (!this.canSave) return;
     const req: RuleRequest = {
       pattern: this.pattern,
-      categoryId: this.categoryId as number,
+      categoryId: this.needsCategory ? (this.categoryId as number) : null,
       status: this.status,
       priority: this.priority,
       isActive: this.isActive,

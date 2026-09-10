@@ -46,6 +46,8 @@ export class RulePickerDialog {
     const term = this.filterText.trim().toLowerCase();
     const rules = this.rulesService.rules();
     if (!term) return rules;
-    return rules.filter((r) => r.pattern.toLowerCase().includes(term) || r.categoryName.toLowerCase().includes(term));
+    return rules.filter(
+      (r) => r.pattern.toLowerCase().includes(term) || (r.categoryName ?? '').toLowerCase().includes(term),
+    );
   }
 }

@@ -12,17 +12,27 @@ namespace FinFlow.Api.Services;
 /// </summary>
 public sealed class RuleSet
 {
-    public sealed record Match(int RuleId, string Pattern, int CategoryId, ClassificationStatus Status);
+    public sealed record Match(int RuleId, string Pattern, int? CategoryId, ClassificationStatus Status);
 
     private readonly List<(Regex Regex, Match Match)> _rules;
 
     internal RuleSet(List<(Regex, Match)> rules) => _rules = rules;
 
+    /// <summary>
+    /// Some bank exports insert a stray space in the middle of a word (a line-wrap artifact from
+    /// the exporting core banking system, not extra/duplicate whitespace — e.g. "Muster
+    /// strasse" instead of "Musterstrasse"), at essentially arbitrary positions that can't be
+    /// reconstructed after the fact. Rather than trying to "fix" the text, matching strips ALL
+    /// whitespace from both the candidate text and the pattern, so where the stray space landed
+    /// stops mattering. Only affects matching — the stored/displayed text is untouched.
+    /// </summary>
+    public static string StripWhitespace(string s) => new([.. s.Where(c => !char.IsWhiteSpace(c))]);
+
     /// <summary>The first active rule (by priority) whose pattern matches, or null if none does —
     /// used to show/edit "which rule caused this" without persisting a MatchedRuleId anywhere.</summary>
     public Match? MatchFor(string? counterpartyName, string? purpose)
     {
-        string text = $"{counterpartyName ?? ""} {purpose ?? ""}".Trim();
+        string text = StripWhitespace($"{counterpartyName ?? ""} {purpose ?? ""}");
         foreach ((Regex regex, Match match) in _rules)
         {
             if (regex.IsMatch(text))
@@ -50,7 +60,7 @@ public class ClassificationService(AppDbContext db)
             .OrderBy(r => r.Priority).ThenBy(r => r.Id)
             .AsEnumerable()
             .Select(r => (
-                new Regex(r.Pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant),
+                new Regex(RuleSet.StripWhitespace(r.Pattern), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant),
                 new RuleSet.Match(r.Id, r.Pattern, r.CategoryId, MapStatus(r.Status))))]);
 
     /// <summary>
@@ -76,12 +86,12 @@ public class ClassificationService(AppDbContext db)
     /// <exception cref="ArgumentException">The pattern is not a valid regex.</exception>
     public PatternTestResult TestPattern(string pattern, int sampleLimit = 20)
     {
-        Regex regex = new(pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        Regex regex = new(RuleSet.StripWhitespace(pattern), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
         List<PatternTestMatch> sample = [];
         int count = 0;
         foreach (Transaction t in db.Transactions.AsNoTracking().OrderBy(t => t.Id))
         {
-            string text = $"{t.CounterpartyName ?? ""} {t.Purpose ?? ""}".Trim();
+            string text = RuleSet.StripWhitespace($"{t.CounterpartyName ?? ""} {t.Purpose ?? ""}");
             if (!regex.IsMatch(text)) continue;
             count++;
             if (sample.Count < sampleLimit)
@@ -94,6 +104,7 @@ public class ClassificationService(AppDbContext db)
     {
         ClassificationRuleStatus.Auto => ClassificationStatus.Auto,
         ClassificationRuleStatus.Ignore => ClassificationStatus.Ignored,
+        ClassificationRuleStatus.InternalTransfer => ClassificationStatus.InternalTransfer,
         _ => ClassificationStatus.NeedsReview,
     };
 }

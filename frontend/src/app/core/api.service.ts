@@ -36,7 +36,8 @@ export interface CategoryRequest {
 
 export interface RuleRequest {
   pattern: string;
-  categoryId: number;
+  /** Null only when status is InternalTransfer — that status needs no category. */
+  categoryId: number | null;
   status: RuleStatus;
   priority: number;
   isActive: boolean;

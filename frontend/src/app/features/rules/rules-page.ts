@@ -39,7 +39,9 @@ export class RulesPage {
     const term = this.filterText.trim().toLowerCase();
     const rules = this.rulesService.rules();
     if (!term) return rules;
-    return rules.filter((r) => r.pattern.toLowerCase().includes(term) || r.categoryName.toLowerCase().includes(term));
+    return rules.filter(
+      (r) => r.pattern.toLowerCase().includes(term) || (r.categoryName ?? '').toLowerCase().includes(term),
+    );
   }
 
   // Form state (plain fields for ngModel).
@@ -96,7 +98,7 @@ export class RulesPage {
   protected edit(rule: RuleDto): void {
     this.editingId = rule.id;
     this.pattern = rule.pattern;
-    this.categoryId = rule.categoryId;
+    this.categoryId = rule.categoryId ?? '';
     this.status = rule.status;
     this.priority = rule.priority;
     this.isActive = rule.isActive;
@@ -114,15 +116,20 @@ export class RulesPage {
     this.testError.set(null);
   }
 
+  /** Internal-transfer rules need no category — every other status still requires one. */
+  protected get needsCategory(): boolean {
+    return this.status !== 'InternalTransfer';
+  }
+
   protected get canSave(): boolean {
-    return this.pattern.trim() !== '' && this.categoryId !== '';
+    return this.pattern.trim() !== '' && (!this.needsCategory || this.categoryId !== '');
   }
 
   protected save(): void {
     if (!this.canSave) return;
     const req: RuleRequest = {
       pattern: this.pattern,
-      categoryId: this.categoryId as number,
+      categoryId: this.needsCategory ? (this.categoryId as number) : null,
       status: this.status,
       priority: this.priority,
       isActive: this.isActive,
