@@ -95,16 +95,14 @@ export class TransactionClassifyDialog {
     this.ruleDialog().open(null, { counterpartyName: t.counterpartyName, purpose: t.purpose }, { pattern: t.counterpartyName ?? '' });
   }
 
-  /** The rule editor already reclassified server-side — refresh this dialog's own view of the
-   * transaction (category/matched rule may have changed) and let the page know too. */
+  /** The rule editor already applied the category and reclassified server-side — close outright
+   * rather than leaving this dialog open. Leaving it open invited clicking this dialog's own
+   * Save afterward, which called patchTransaction without a status and forced ManualOverride,
+   * clobbering the Auto status the rule save had just set (and, since ReclassifyAll skips
+   * ManualOverride transactions, freezing that transaction out of future reclassification too). */
   protected onRuleSaved(): void {
-    const t = this.transaction;
-    if (!t) return;
-    this.api.getTransaction(t.id).subscribe((fresh) => {
-      this.transaction = fresh;
-      this.categoryId = fresh.categoryId ?? '';
-      this.changed.emit();
-    });
+    this.visible.set(false);
+    this.changed.emit();
   }
 
   protected cancel(): void {
