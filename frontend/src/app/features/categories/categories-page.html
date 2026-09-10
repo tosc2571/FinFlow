@@ -30,15 +30,21 @@
   <label>Filter <input type="text" [(ngModel)]="filterText" placeholder="category name" /></label>
 </div>
 
-<ng-template #categoryRow let-c let-depth="depth">
+<ng-template #categoryRow let-c let-depth="depth" let-isChild="isChild">
   <tr>
     <td [style.paddingLeft.rem]="depth * 1.5 + 0.6">
-      @if (childrenOf(c).length > 0) {
+      @if (!isChild && childrenOf(c).length > 0) {
         <button type="button" class="tree-toggle" (click)="toggleExpand(c)" [title]="isExpanded(c) ? 'Collapse' : 'Expand'">
           {{ isExpanded(c) ? '▾' : '▸' }}
         </button>
+        <span class="category-parent-name">{{ c.name }}</span>
+      } @else if (isChild) {
+        <span class="tree-connector">↳</span>
+        <span class="category-child-name">{{ c.name }}</span>
+      } @else {
+        <span class="tree-spacer"></span>
+        {{ c.name }}
       }
-      {{ c.name }}
     </td>
     <td>{{ c.isIncome ? '✓' : '—' }}</td>
     <td class="amount">
@@ -74,10 +80,10 @@
   </thead>
   <tbody>
     @for (top of topLevelCategories; track top.id) {
-      <ng-container [ngTemplateOutlet]="categoryRow" [ngTemplateOutletContext]="{ $implicit: top, depth: 0 }" />
+      <ng-container [ngTemplateOutlet]="categoryRow" [ngTemplateOutletContext]="{ $implicit: top, depth: 0, isChild: false }" />
       @if (isExpanded(top)) {
         @for (child of childrenOf(top); track child.id) {
-          <ng-container [ngTemplateOutlet]="categoryRow" [ngTemplateOutletContext]="{ $implicit: child, depth: 1 }" />
+          <ng-container [ngTemplateOutlet]="categoryRow" [ngTemplateOutletContext]="{ $implicit: child, depth: 1, isChild: true }" />
         }
       }
     } @empty {
