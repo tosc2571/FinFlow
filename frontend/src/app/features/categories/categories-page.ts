@@ -40,15 +40,19 @@ export class CategoriesPage {
     this.rulesService.ensureLoaded();
   }
 
-  /** Categories matching the text filter, plus any ancestor of a match — so a matching
-   * sub-category doesn't lose its parent row and become orphaned in the tree. */
+  /** Categories matching the text filter, plus every ancestor of a match (however deep the
+   * chain goes) — so a matching sub-category doesn't lose its place in the tree. */
   protected get filteredCategories(): CategoryDto[] {
     const term = this.filterText.trim().toLowerCase();
     const all = this.categoriesService.categories();
     if (!term) return all;
-    const keepIds = new Set(all.filter((c) => c.name.toLowerCase().includes(term)).map((c) => c.id));
+    const byId = new Map(all.map((c) => [c.id, c]));
+    const keepIds = new Set<number>();
     for (const c of all) {
-      if (keepIds.has(c.id) && c.parentCategoryId !== null) keepIds.add(c.parentCategoryId);
+      if (!c.name.toLowerCase().includes(term)) continue;
+      for (let cur: CategoryDto | undefined = c; cur; cur = cur.parentCategoryId === null ? undefined : byId.get(cur.parentCategoryId)) {
+        keepIds.add(cur.id);
+      }
     }
     return all.filter((c) => keepIds.has(c.id));
   }
