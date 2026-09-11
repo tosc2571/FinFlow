@@ -212,6 +212,17 @@ button.danger {
   margin-bottom: 1rem;
 }
 
+.panel-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.panel-row .panel {
+  margin-bottom: 0;
+}
+
 /* --- import drop zone --- */
 
 .dropzone {
