@@ -60,6 +60,22 @@
   </div>
 }
 
+<ng-template #breakdownRow let-node let-depth="depth">
+  <tr>
+    <td [style.paddingLeft.rem]="depth * 1.5 + 0.6">
+      @if (depth > 0) {
+        <span class="tree-connector">↳</span>
+      }
+      {{ node.name }}
+    </td>
+    <td class="amount">{{ node.count }}</td>
+    <td class="amount" [class.neg]="node.total < 0">{{ node.total | number: '1.2-2' }} €</td>
+  </tr>
+  @for (child of node.children; track child.id) {
+    <ng-container [ngTemplateOutlet]="breakdownRow" [ngTemplateOutletContext]="{ $implicit: child, depth: depth + 1 }" />
+  }
+</ng-template>
+
 @if (categoryChart(); as config) {
   <div class="panel">
     <h2>By category</h2>
@@ -74,12 +90,8 @@
           </tr>
         </thead>
         <tbody>
-          @for (row of byCategory(); track row.categoryName) {
-            <tr>
-              <td>{{ row.categoryName }}</td>
-              <td class="amount">{{ row.count }}</td>
-              <td class="amount" [class.neg]="row.total < 0">{{ row.total | number: '1.2-2' }} €</td>
-            </tr>
+          @for (root of categoryBreakdownTree(); track root.id) {
+            <ng-container [ngTemplateOutlet]="breakdownRow" [ngTemplateOutletContext]="{ $implicit: root, depth: 0 }" />
           }
         </tbody>
       </table>

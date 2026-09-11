@@ -1,12 +1,13 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
+import { DecimalPipe, NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ChartConfiguration } from 'chart.js';
 import { ApiService } from '../../core/api.service';
+import { CategoriesService } from '../../core/categories.service';
 import { ChartComponent } from '../../shared/chart';
 import { onEnterSubmit } from '../../shared/keyboard';
-import { CategoryBreakdown, DashboardSummary, MonthForecast, MonthlyTrend } from '../../shared/models';
+import { CategoryBreakdown, CategoryDto, DashboardSummary, MonthForecast, MonthlyTrend } from '../../shared/models';
 
 // Validated reference palette: diverging blue/red pair for polarity (income vs. expenses).
 const POSITIVE = '#2a78d6';
@@ -55,15 +56,84 @@ function pieSlices(
   return { labels, values, colors };
 }
 
+// Sentinel id for the synthetic "uncategorized" row — CategoryBreakdown.categoryId is null for
+// transactions with no category (backend labels it "Other"), distinct from any real category id.
+const UNCATEGORIZED_ID = -1;
+
+export interface CategoryBreakdownNode {
+  id: number;
+  name: string;
+  /** Own transactions plus every descendant's, recursively. */
+  count: number;
+  total: number;
+  children: CategoryBreakdownNode[];
+}
+
+/** Mirrors the category tree (arbitrary depth, #70/#72) with each node's count/total rolled up
+ * from its own directly-assigned transactions plus all of its descendants'. Nodes with no
+ * transactions anywhere in their subtree are dropped — same "only show what has data" behavior
+ * the flat table already had. */
+function buildCategoryBreakdownTree(categories: CategoryDto[], breakdown: CategoryBreakdown[]): CategoryBreakdownNode[] {
+  const ownById = new Map<number, { count: number; total: number }>();
+  for (const b of breakdown) {
+    ownById.set(b.categoryId ?? UNCATEGORIZED_ID, { count: b.count, total: b.total });
+  }
+
+  const nodeById = new Map<number, CategoryBreakdownNode>();
+  for (const c of categories) {
+    nodeById.set(c.id, { id: c.id, name: c.name, count: 0, total: 0, children: [] });
+  }
+  const roots: CategoryBreakdownNode[] = [];
+  for (const c of categories) {
+    const node = nodeById.get(c.id)!;
+    const parent = c.parentCategoryId !== null ? nodeById.get(c.parentCategoryId) : undefined;
+    if (parent) parent.children.push(node);
+    else roots.push(node);
+  }
+
+  function aggregate(node: CategoryBreakdownNode): void {
+    const own = ownById.get(node.id);
+    node.count = own?.count ?? 0;
+    node.total = own?.total ?? 0;
+    for (const child of node.children) {
+      aggregate(child);
+      node.count += child.count;
+      node.total += child.total;
+    }
+  }
+  for (const root of roots) aggregate(root);
+
+  function prune(node: CategoryBreakdownNode): CategoryBreakdownNode {
+    return { ...node, children: node.children.filter((c) => c.count > 0).map(prune) };
+  }
+  const byName = (a: CategoryBreakdownNode, b: CategoryBreakdownNode) => a.name.localeCompare(b.name);
+  function sortTree(node: CategoryBreakdownNode): CategoryBreakdownNode {
+    node.children.sort(byName);
+    node.children.forEach(sortTree);
+    return node;
+  }
+
+  const result = roots.filter((r) => r.count > 0).map(prune);
+  result.forEach(sortTree);
+  result.sort(byName);
+
+  const uncategorized = ownById.get(UNCATEGORIZED_ID);
+  if (uncategorized && uncategorized.count > 0) {
+    result.push({ id: UNCATEGORIZED_ID, name: 'Other', count: uncategorized.count, total: uncategorized.total, children: [] });
+  }
+  return result;
+}
+
 @Component({
   selector: 'app-dashboard-page',
-  imports: [FormsModule, DecimalPipe, ChartComponent],
+  imports: [FormsModule, DecimalPipe, NgTemplateOutlet, ChartComponent],
   templateUrl: './dashboard-page.html',
 })
 export class DashboardPage {
   private api = inject(ApiService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  protected categoriesService = inject(CategoriesService);
 
   protected onToolbarEnter(event: Event): void {
     onEnterSubmit(event, () => this.load());
@@ -93,6 +163,7 @@ export class DashboardPage {
     this.load();
     this.initialSyncDone = true;
     this.api.getForecast(6).subscribe((f) => this.forecast.set(f));
+    this.categoriesService.ensureLoaded();
   }
 
   private syncUrl(): void {
@@ -202,6 +273,12 @@ export class DashboardPage {
       },
     };
   });
+
+  /** By-category breakdown, in the same parent/child tree shape as the Categories page (#70/#72),
+   * with every node showing its own transactions' total plus all of its descendants'. */
+  protected readonly categoryBreakdownTree = computed<CategoryBreakdownNode[]>(() =>
+    buildCategoryBreakdownTree(this.categoriesService.categories(), this.byCategory()),
+  );
 
   /** Expense categories only, as a share of total spending. */
   protected readonly expensesPieChart = computed<ChartConfiguration | null>(() => {
