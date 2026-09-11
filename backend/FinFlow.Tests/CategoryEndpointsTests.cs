@@ -122,17 +122,17 @@ public class CategoryEndpointsTests : IDisposable
     }
 
     [Fact]
-    public async Task ValidateCategory_ParentIsItselfASubCategory_ReturnsBadRequest()
+    public async Task ValidateCategory_ParentIsItselfASubCategory_Allowed()
     {
+        // Nesting depth is unlimited (#72) — a category can be created under a parent that is
+        // itself already a sub-category, going 3+ levels deep.
         using AppDbContext ctx = CreateContext();
         int topId = AddCategory(ctx, "Wohnen");
         int childId = AddCategory(ctx, "Miete", topId);
 
         CategoryEndpoints.CategoryValidationError? error = await CategoryEndpoints.ValidateCategory(ctx, existing: null, "Kaution", parentCategoryId: childId);
 
-        Assert.NotNull(error);
-        Assert.Equal(400, error!.StatusCode);
-        Assert.Contains("more than two levels", error.Message);
+        Assert.Null(error);
     }
 
     [Fact]
@@ -147,8 +147,10 @@ public class CategoryEndpointsTests : IDisposable
     }
 
     [Fact]
-    public async Task ValidateCategory_ReparentingCategoryWithChildren_ReturnsBadRequest()
+    public async Task ValidateCategory_ReparentingCategoryWithChildren_Allowed()
     {
+        // Nesting depth is unlimited (#72) — a category that already has children of its own can
+        // still be given a parent, deepening the whole subtree rather than being rejected.
         using AppDbContext ctx = CreateContext();
         int otherTopId = AddCategory(ctx, "Auto");
         int parentWithChildrenId = AddCategory(ctx, "Wohnen");
@@ -157,9 +159,7 @@ public class CategoryEndpointsTests : IDisposable
 
         CategoryEndpoints.CategoryValidationError? error = await CategoryEndpoints.ValidateCategory(ctx, existing: parentWithChildren, "Wohnen", parentCategoryId: otherTopId);
 
-        Assert.NotNull(error);
-        Assert.Equal(400, error!.StatusCode);
-        Assert.Contains("already has sub-categories", error.Message);
+        Assert.Null(error);
     }
 
     [Fact]
@@ -173,6 +173,36 @@ public class CategoryEndpointsTests : IDisposable
 
         Assert.NotNull(error);
         Assert.Equal(400, error!.StatusCode);
+        Assert.Contains("cycle", error.Message);
+    }
+
+    [Fact]
+    public async Task ValidateCategory_FourLevelsDeep_ReturnsNull()
+    {
+        using AppDbContext ctx = CreateContext();
+        int level1 = AddCategory(ctx, "Ebene1");
+        int level2 = AddCategory(ctx, "Ebene2", level1);
+        int level3 = AddCategory(ctx, "Ebene3", level2);
+
+        CategoryEndpoints.CategoryValidationError? error = await CategoryEndpoints.ValidateCategory(ctx, existing: null, "Ebene4", parentCategoryId: level3);
+
+        Assert.Null(error);
+    }
+
+    [Fact]
+    public async Task ValidateCategory_CycleThroughGrandparent_ReturnsBadRequest()
+    {
+        // A cycle can appear at any depth, not just a direct self-reference — assigning a
+        // category's own grandchild as its new parent must still be rejected.
+        using AppDbContext ctx = CreateContext();
+        int grandparentId = AddCategory(ctx, "Ebene1");
+        int parentId = AddCategory(ctx, "Ebene2", grandparentId);
+        int childId = AddCategory(ctx, "Ebene3", parentId);
+        Category grandparent = await ctx.Categories.FindAsync(grandparentId) ?? throw new InvalidOperationException();
+
+        CategoryEndpoints.CategoryValidationError? error = await CategoryEndpoints.ValidateCategory(ctx, existing: grandparent, "Ebene1", parentCategoryId: childId);
+
+        Assert.NotNull(error);
         Assert.Contains("cycle", error.Message);
     }
 
