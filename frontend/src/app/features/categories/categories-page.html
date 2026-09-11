@@ -30,15 +30,15 @@
   <label>Filter <input type="text" [(ngModel)]="filterText" placeholder="category name" /></label>
 </div>
 
-<ng-template #categoryRow let-c let-depth="depth" let-isChild="isChild">
+<ng-template #categoryRow let-c let-depth="depth">
   <tr>
     <td [style.paddingLeft.rem]="depth * 1.5 + 0.6">
-      @if (!isChild && childrenOf(c).length > 0) {
+      @if (childrenOf(c).length > 0) {
         <button type="button" class="tree-toggle" (click)="toggleExpand(c)" [title]="isExpanded(c) ? 'Collapse' : 'Expand'">
           {{ isExpanded(c) ? '▾' : '▸' }}
         </button>
         <span class="category-parent-name">{{ c.name }}</span>
-      } @else if (isChild) {
+      } @else if (depth > 0) {
         <span class="tree-connector">↳</span>
         <span class="category-child-name">{{ c.name }}</span>
       } @else {
@@ -65,6 +65,15 @@
       <button class="danger" (click)="delete(c)">Delete</button>
     </td>
   </tr>
+  <!-- Recursive: a child can have children of its own — the data isn't actually capped at 2
+       levels (e.g. older/imported categories), even though creating a 3rd level via the form
+       above is blocked. depth < 10 is just a sanity backstop against a corrupted cyclic parent
+       chain, not a real limit — #70. -->
+  @if (isExpanded(c) && depth < 10) {
+    @for (child of childrenOf(c); track child.id) {
+      <ng-container [ngTemplateOutlet]="categoryRow" [ngTemplateOutletContext]="{ $implicit: child, depth: depth + 1 }" />
+    }
+  }
 </ng-template>
 
 <div class="table-scroll">
@@ -80,12 +89,7 @@
   </thead>
   <tbody>
     @for (top of topLevelCategories; track top.id) {
-      <ng-container [ngTemplateOutlet]="categoryRow" [ngTemplateOutletContext]="{ $implicit: top, depth: 0, isChild: false }" />
-      @if (isExpanded(top)) {
-        @for (child of childrenOf(top); track child.id) {
-          <ng-container [ngTemplateOutlet]="categoryRow" [ngTemplateOutletContext]="{ $implicit: child, depth: 1, isChild: true }" />
-        }
-      }
+      <ng-container [ngTemplateOutlet]="categoryRow" [ngTemplateOutletContext]="{ $implicit: top, depth: 0 }" />
     } @empty {
       <tr>
         <td colspan="5" class="muted">
