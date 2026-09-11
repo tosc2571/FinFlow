@@ -49,6 +49,9 @@ export class RulesPage {
   protected pattern = '';
   protected categoryId: number | '' = '';
   protected status: RuleStatus = 'NeedsReview';
+  // No UI for this — every rule is created at the same priority in practice, so the field just
+  // cluttered the form/table. Still sent to the backend (which still orders matches by it) and
+  // still round-tripped by edit() below, in case a rule somehow ends up with a different value.
   protected priority = 100;
   protected isActive = true;
 

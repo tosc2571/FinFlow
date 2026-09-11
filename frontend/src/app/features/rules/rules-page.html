@@ -34,7 +34,6 @@
         <option value="InternalTransfer">Internal transfer</option>
       </select>
     </label>
-    <label>Priority <input type="number" [(ngModel)]="priority" style="width: 5rem" /></label>
     <label><input type="checkbox" [(ngModel)]="isActive" /> active</label>
     <button class="primary" [disabled]="!canSave" (click)="save()">
       {{ editingId === null ? 'Create' : 'Save' }}
@@ -93,7 +92,6 @@
 <table>
   <thead>
     <tr>
-      <th>Priority</th>
       <th>Pattern</th>
       <th>Category</th>
       <th>Status</th>
@@ -104,7 +102,6 @@
   <tbody>
     @for (rule of filteredRules; track rule.id) {
       <tr>
-        <td>{{ rule.priority }}</td>
         <td><code>{{ rule.pattern }}</code></td>
         <td>{{ rule.categoryName ?? '—' }}</td>
         <td>{{ rule.status }}</td>
@@ -116,7 +113,7 @@
       </tr>
     } @empty {
       <tr>
-        <td colspan="6" class="muted">
+        <td colspan="5" class="muted">
           @if (filterText.trim()) {
             No rules match "{{ filterText }}".
           } @else {
