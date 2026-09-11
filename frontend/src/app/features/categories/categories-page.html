@@ -65,10 +65,9 @@
       <button class="danger" (click)="delete(c)">Delete</button>
     </td>
   </tr>
-  <!-- Recursive: a child can have children of its own — the data isn't actually capped at 2
-       levels (e.g. older/imported categories), even though creating a 3rd level via the form
-       above is blocked. depth < 10 is just a sanity backstop against a corrupted cyclic parent
-       chain, not a real limit — #70. -->
+  <!-- Recursive: a child can have children of its own — nesting depth is unlimited (#70, #72).
+       depth < 10 is just a sanity backstop against a corrupted cyclic parent chain, not a real
+       limit. -->
   @if (isExpanded(c) && depth < 10) {
     @for (child of childrenOf(c); track child.id) {
       <ng-container [ngTemplateOutlet]="categoryRow" [ngTemplateOutletContext]="{ $implicit: child, depth: depth + 1 }" />

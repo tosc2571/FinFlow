@@ -96,11 +96,10 @@ public static class CategoryEndpoints
     }
 
     /// <summary>
-    /// Shared by POST and PUT. `existing` is null for a create (skips the cycle/has-children
-    /// checks, which only make sense once a category already exists) and the category being
-    /// updated for a PUT. Hierarchy is capped at exactly two levels: a category whose chosen
-    /// parent is itself a sub-category is rejected, and a category that already has children of
-    /// its own can't be given a parent (both directions of the same invariant).
+    /// Shared by POST and PUT. `existing` is null for a create (skips the cycle check, which
+    /// only makes sense once a category already exists) and the category being updated for a
+    /// PUT. Nesting depth is unlimited (#72) — the only structural rule left is that a parent
+    /// assignment can't create a cycle.
     /// </summary>
     internal static async Task<CategoryValidationError?> ValidateCategory(
         AppDbContext db, Category? existing, string name, int? parentCategoryId)
@@ -113,16 +112,9 @@ public static class CategoryEndpoints
             Category? parent = await db.Categories.FindAsync(parentId);
             if (parent is null)
                 return new(StatusCodes.Status400BadRequest, $"Unknown parent category {parentId}.");
-            if (parent.ParentCategoryId is not null)
-                return new(StatusCodes.Status400BadRequest, $"Cannot nest more than two levels — \"{parent.Name}\" is itself a sub-category.");
 
-            if (existing is not null)
-            {
-                if (await WouldCreateCycle(db, existing.Id, parentId))
-                    return new(StatusCodes.Status400BadRequest, "Parent assignment would create a cycle.");
-                if (await HasChildren(db, existing.Id))
-                    return new(StatusCodes.Status400BadRequest, $"Cannot make \"{existing.Name}\" a sub-category — it already has sub-categories of its own.");
-            }
+            if (existing is not null && await WouldCreateCycle(db, existing.Id, parentId))
+                return new(StatusCodes.Status400BadRequest, "Parent assignment would create a cycle.");
         }
 
         if (await IsDuplicateName(db, name, parentCategoryId, excludeId: existing?.Id))
