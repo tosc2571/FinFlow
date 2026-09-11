@@ -12,6 +12,18 @@ import { CategoryBreakdown, DashboardSummary, MonthForecast, MonthlyTrend } from
 const POSITIVE = '#2a78d6';
 const NEGATIVE = '#e34948';
 
+// Category hues for the two per-category pie charts, matching the POSITIVE/NEGATIVE hue family
+// so each pie still reads as "income" or "expenses" at a glance, with lightness distinguishing
+// individual categories within it.
+const POSITIVE_HUE = 213;
+const NEGATIVE_HUE = 2;
+
+/** `count` evenly-spaced shades of one hue — one per pie slice. */
+function shades(hue: number, count: number): string[] {
+  if (count <= 1) return [`hsl(${hue}, 55%, 50%)`];
+  return Array.from({ length: count }, (_, i) => `hsl(${hue}, 55%, ${35 + (i * 35) / (count - 1)}%)`);
+}
+
 @Component({
   selector: 'app-dashboard-page',
   imports: [FormsModule, DecimalPipe, ChartComponent],
@@ -157,6 +169,38 @@ export class DashboardPage {
         plugins: { legend: { display: false } },
         scales: { y: { grid: { display: false } } },
       },
+    };
+  });
+
+  /** Expense categories only, as a share of total spending. */
+  protected readonly expensesPieChart = computed<ChartConfiguration | null>(() => {
+    const rows = this.byCategory()
+      .filter((r) => r.total < 0)
+      .sort((a, b) => a.total - b.total);
+    if (rows.length === 0) return null;
+    return {
+      type: 'pie',
+      data: {
+        labels: rows.map((r) => r.categoryName),
+        datasets: [{ data: rows.map((r) => -r.total), backgroundColor: shades(NEGATIVE_HUE, rows.length) }],
+      },
+      options: { plugins: { legend: { position: 'right' } } },
+    };
+  });
+
+  /** Income categories only, as a share of total income. */
+  protected readonly incomePieChart = computed<ChartConfiguration | null>(() => {
+    const rows = this.byCategory()
+      .filter((r) => r.total > 0)
+      .sort((a, b) => b.total - a.total);
+    if (rows.length === 0) return null;
+    return {
+      type: 'pie',
+      data: {
+        labels: rows.map((r) => r.categoryName),
+        datasets: [{ data: rows.map((r) => r.total), backgroundColor: shades(POSITIVE_HUE, rows.length) }],
+      },
+      options: { plugins: { legend: { position: 'right' } } },
     };
   });
 }

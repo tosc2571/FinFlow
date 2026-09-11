@@ -43,6 +43,23 @@
   </div>
 }
 
+@if (expensesPieChart() || incomePieChart()) {
+  <div class="panel-row">
+    @if (expensesPieChart(); as config) {
+      <div class="panel">
+        <h2>Expenses by category</h2>
+        <app-chart [config]="config" />
+      </div>
+    }
+    @if (incomePieChart(); as config) {
+      <div class="panel">
+        <h2>Income by category</h2>
+        <app-chart [config]="config" />
+      </div>
+    }
+  </div>
+}
+
 @if (categoryChart(); as config) {
   <div class="panel">
     <h2>By category</h2>
