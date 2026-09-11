@@ -1,6 +1,7 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ApiService, BankAccountRequest } from '../../core/api.service';
+import { BankAccountRequest } from '../../core/api.service';
+import { AccountsService } from '../../core/accounts.service';
 import { onEnterSubmit } from '../../shared/keyboard';
 import { BankAccountDto } from '../../shared/models';
 
@@ -10,13 +11,13 @@ import { BankAccountDto } from '../../shared/models';
   templateUrl: './accounts-page.html',
 })
 export class AccountsPage {
-  private api = inject(ApiService);
+  private accountsService = inject(AccountsService);
 
   protected onToolbarEnter(event: Event): void {
     onEnterSubmit(event, () => this.save());
   }
 
-  protected readonly accounts = signal<BankAccountDto[]>([]);
+  protected readonly accounts = this.accountsService.accounts;
 
   protected editingId: number | null = null;
   protected bankName = '';
@@ -24,11 +25,7 @@ export class AccountsPage {
   protected iban = '';
 
   constructor() {
-    this.load();
-  }
-
-  protected load(): void {
-    this.api.getAccounts().subscribe((a) => this.accounts.set(a));
+    this.accountsService.ensureLoaded();
   }
 
   protected edit(account: BankAccountDto): void {
@@ -52,11 +49,9 @@ export class AccountsPage {
       displayName: this.displayName.trim() || null,
       iban: this.iban,
     };
-    const call = this.editingId === null ? this.api.createAccount(req) : this.api.updateAccount(this.editingId, req);
-    call.subscribe(() => {
-      this.resetForm();
-      this.load();
-    });
+    const call =
+      this.editingId === null ? this.accountsService.create(req) : this.accountsService.update(this.editingId, req);
+    call.subscribe(() => this.resetForm());
   }
 
   protected delete(account: BankAccountDto): void {
@@ -66,6 +61,6 @@ export class AccountsPage {
       )
     )
       return;
-    this.api.deleteAccount(account.id).subscribe(() => this.load());
+    this.accountsService.delete(account.id).subscribe();
   }
 }
