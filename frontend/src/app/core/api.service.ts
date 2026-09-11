@@ -74,8 +74,17 @@ export class ApiService {
     });
   }
 
+  /** All transaction ids matching a filter, unpaginated — backs "select all N matching filter". */
+  getTransactionIds(filter: TransactionFilter): Observable<number[]> {
+    return this.http.get<number[]>('/api/transactions/ids', { params: this.toParams(filter, {}) });
+  }
+
   patchTransaction(id: number, body: { categoryId: number | null; status?: ClassificationStatus }): Observable<unknown> {
     return this.http.patch(`/api/transactions/${id}`, body);
+  }
+
+  bulkCategorizeTransactions(transactionIds: number[], categoryId: number | null): Observable<{ updated: number }> {
+    return this.http.post<{ updated: number }>('/api/transactions/bulk-categorize', { transactionIds, categoryId });
   }
 
   deleteTransaction(id: number): Observable<unknown> {
