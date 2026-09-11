@@ -1,8 +1,9 @@
-import { Component, computed, inject, signal, viewChild } from '@angular/core';
+import { Component, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ApiService } from '../../core/api.service';
+import { AccountsService } from '../../core/accounts.service';
 import { CategoriesService } from '../../core/categories.service';
 import { onEnterSubmit } from '../../shared/keyboard';
 import { TransactionClassifyDialog } from '../../shared/transaction-classify-dialog';
@@ -24,6 +25,7 @@ export class TransactionsPage {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   protected categoriesService = inject(CategoriesService);
+  private accountsService = inject(AccountsService);
   protected classifyDialog = viewChild.required(TransactionClassifyDialog);
 
   protected onToolbarEnter(event: Event): void {
@@ -82,6 +84,21 @@ export class TransactionsPage {
       this.load(qp.get('page') ? Number(qp.get('page')) : 1);
     });
     this.initialSyncDone = true;
+
+    // Creating/editing an account retroactively re-flags matching transactions as
+    // InternalTransfer on the backend (TransferDetectionService) — without this, a Transactions
+    // tab kept alive by KeepAliveRouteReuseStrategy would go on showing the stale NeedsReview
+    // status until some unrelated reload happened to fire.
+    this.accountsService.ensureLoaded();
+    let skipFirstAccountsChange = true;
+    effect(() => {
+      this.accountsService.accounts();
+      if (skipFirstAccountsChange) {
+        skipFirstAccountsChange = false;
+        return;
+      }
+      this.load(this.data()?.page ?? 1);
+    });
   }
 
   /** Keeps the URL in sync with the current filters (query-param values, not history entries —
