@@ -42,6 +42,13 @@ public static class TransactionEndpoints
             return Results.Ok(new { total, page, pageSize, items });
         });
 
+        // Backs "select all N matching filter" in the UI — the paged "/" endpoint only returns
+        // one page's worth of rows, not enough to select everything the filter matches.
+        group.MapGet("/ids", (AppDbContext db, [AsParameters] TransactionFilterParams filter) =>
+            Results.Ok(TransactionFilters.Apply(db.Transactions.AsNoTracking(), filter)
+                .Select(t => t.Id)
+                .ToList()));
+
         group.MapGet("/{id:int}", (int id, AppDbContext db, ClassificationService svc) =>
             db.Transactions.AsNoTracking().Where(t => t.Id == id).Select(ToDto).FirstOrDefault() is { } dto
                 ? Results.Ok(WithMatchedRule(dto, svc.LoadRuleSet()))

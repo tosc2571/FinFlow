@@ -49,11 +49,36 @@
   <a [href]="exportUrl('csv')" download><button>Export CSV</button></a>
 </div>
 
+@if (selectedIds().size > 0) {
+  <div class="toolbar">
+    <span>{{ selectedIds().size }} selected</span>
+    @if (allOnPageSelected && !selectingAllMatching() && data() && selectedIds().size < data()!.total) {
+      <button type="button" (click)="selectAllMatching()">Select all {{ data()!.total }} matching filter</button>
+    }
+    <button type="button" (click)="clearSelection()">Clear selection</button>
+    <span style="flex: 1"></span>
+    <label>
+      Assign category
+      <select [(ngModel)]="bulkCategoryId">
+        <option value="" disabled>— choose category —</option>
+        <option [ngValue]="null">— uncategorized —</option>
+        @for (c of categoriesService.categories(); track c.id) {
+          <option [ngValue]="c.id">{{ c.name }}</option>
+        }
+      </select>
+    </label>
+    <button class="primary" [disabled]="bulkCategoryId === ''" (click)="applyBulkCategory()">
+      Apply to {{ selectedIds().size }}
+    </button>
+  </div>
+}
+
 @if (data(); as d) {
   <div class="table-scroll">
   <table>
     <thead>
       <tr>
+        <th><input type="checkbox" [checked]="allOnPageSelected" (change)="toggleSelectAllOnPage()" /></th>
         <th>Date</th>
         <th>Bank</th>
         <th>Counterparty</th>
@@ -67,6 +92,7 @@
     <tbody>
       @for (t of d.items; track t.id) {
         <tr>
+          <td><input type="checkbox" [checked]="isSelected(t.id)" (change)="toggleSelect(t.id)" /></td>
           <td>{{ t.bookingDate | date: 'dd.MM.yyyy' }}</td>
           <td>{{ t.sourceBank }}</td>
           <td>{{ t.counterpartyName }}</td>
@@ -100,7 +126,7 @@
         </tr>
       } @empty {
         <tr>
-          <td colspan="8" class="muted">No transactions found — adjust the filter or import some CSV files first.</td>
+          <td colspan="9" class="muted">No transactions found — adjust the filter or import some CSV files first.</td>
         </tr>
       }
     </tbody>
@@ -108,9 +134,9 @@
   </div>
 
   <div class="pager">
-    <button [disabled]="d.page <= 1 || loading()" (click)="load(d.page - 1)">‹ Prev</button>
+    <button [disabled]="d.page <= 1 || loading()" (click)="load(d.page - 1, true)">‹ Prev</button>
     <span>Page {{ d.page }} / {{ totalPages() }} — {{ d.total }} transaction(s)</span>
-    <button [disabled]="d.page >= totalPages() || loading()" (click)="load(d.page + 1)">Next ›</button>
+    <button [disabled]="d.page >= totalPages() || loading()" (click)="load(d.page + 1, true)">Next ›</button>
   </div>
 } @else {
   <p class="muted">Loading …</p>
