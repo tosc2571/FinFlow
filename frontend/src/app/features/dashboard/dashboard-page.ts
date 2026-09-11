@@ -12,16 +12,47 @@ import { CategoryBreakdown, DashboardSummary, MonthForecast, MonthlyTrend } from
 const POSITIVE = '#2a78d6';
 const NEGATIVE = '#e34948';
 
-// Category hues for the two per-category pie charts, matching the POSITIVE/NEGATIVE hue family
-// so each pie still reads as "income" or "expenses" at a glance, with lightness distinguishing
-// individual categories within it.
-const POSITIVE_HUE = 213;
-const NEGATIVE_HUE = 2;
+// Qualitative palette for the two per-category pie charts. Each pie already reads as "income" or
+// "expenses" from its heading, so distinct hues (rather than shades of one polarity color) are
+// used here instead — shades of a single hue become indistinguishable once there are more than
+// two or three slices.
+const CATEGORY_PALETTE = [
+  '#2a78d6', '#e34948', '#3fa34d', '#e0a72e', '#8456c9',
+  '#2bb3b3', '#d6672a', '#c93f8d', '#6b8e23', '#4a5fc1',
+];
+const OTHER_COLOR = '#c3c2b7'; // neutral gray, deliberately outside the palette — marks the catch-all slice as "not a real category"
+const OTHER_LABEL = 'Other';
 
-/** `count` evenly-spaced shades of one hue — one per pie slice. */
-function shades(hue: number, count: number): string[] {
-  if (count <= 1) return [`hsl(${hue}, 55%, 50%)`];
-  return Array.from({ length: count }, (_, i) => `hsl(${hue}, 55%, ${35 + (i * 35) / (count - 1)}%)`);
+// Categories under this share of the pie's total are folded into one "Other" slice — with many
+// small categories the pie becomes unreadable otherwise.
+const OTHER_THRESHOLD = 0.04;
+
+/** Sorts by size, folds everything under OTHER_THRESHOLD into a single "Other" slice (only
+ * worthwhile once there are 2+ of them — isolating just one small category gains nothing), and
+ * assigns each remaining slice a distinct color. */
+function pieSlices(
+  rows: CategoryBreakdown[],
+  amountOf: (r: CategoryBreakdown) => number,
+): { labels: string[]; values: number[]; colors: string[] } {
+  const sorted = [...rows].sort((a, b) => amountOf(b) - amountOf(a));
+  const total = sorted.reduce((sum, r) => sum + amountOf(r), 0);
+  const big = total > 0 ? sorted.filter((r) => amountOf(r) / total >= OTHER_THRESHOLD) : sorted;
+  const small = total > 0 ? sorted.filter((r) => amountOf(r) / total < OTHER_THRESHOLD) : [];
+
+  const labels = big.map((r) => r.categoryName);
+  const values = big.map(amountOf);
+  const colors = big.map((_, i) => CATEGORY_PALETTE[i % CATEGORY_PALETTE.length]);
+
+  if (small.length === 1) {
+    labels.push(small[0].categoryName);
+    values.push(amountOf(small[0]));
+    colors.push(CATEGORY_PALETTE[big.length % CATEGORY_PALETTE.length]);
+  } else if (small.length > 1) {
+    labels.push(OTHER_LABEL);
+    values.push(small.reduce((sum, r) => sum + amountOf(r), 0));
+    colors.push(OTHER_COLOR);
+  }
+  return { labels, values, colors };
 }
 
 @Component({
@@ -174,32 +205,24 @@ export class DashboardPage {
 
   /** Expense categories only, as a share of total spending. */
   protected readonly expensesPieChart = computed<ChartConfiguration | null>(() => {
-    const rows = this.byCategory()
-      .filter((r) => r.total < 0)
-      .sort((a, b) => a.total - b.total);
+    const rows = this.byCategory().filter((r) => r.total < 0);
     if (rows.length === 0) return null;
+    const { labels, values, colors } = pieSlices(rows, (r) => -r.total);
     return {
       type: 'pie',
-      data: {
-        labels: rows.map((r) => r.categoryName),
-        datasets: [{ data: rows.map((r) => -r.total), backgroundColor: shades(NEGATIVE_HUE, rows.length) }],
-      },
+      data: { labels, datasets: [{ data: values, backgroundColor: colors }] },
       options: { plugins: { legend: { position: 'right' } } },
     };
   });
 
   /** Income categories only, as a share of total income. */
   protected readonly incomePieChart = computed<ChartConfiguration | null>(() => {
-    const rows = this.byCategory()
-      .filter((r) => r.total > 0)
-      .sort((a, b) => b.total - a.total);
+    const rows = this.byCategory().filter((r) => r.total > 0);
     if (rows.length === 0) return null;
+    const { labels, values, colors } = pieSlices(rows, (r) => r.total);
     return {
       type: 'pie',
-      data: {
-        labels: rows.map((r) => r.categoryName),
-        datasets: [{ data: rows.map((r) => r.total), backgroundColor: shades(POSITIVE_HUE, rows.length) }],
-      },
+      data: { labels, datasets: [{ data: values, backgroundColor: colors }] },
       options: { plugins: { legend: { position: 'right' } } },
     };
   });
