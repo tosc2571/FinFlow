@@ -69,4 +69,34 @@ public class DkbCsvParserTests : CsvParserTestBase
         Assert.Equal("Arbeitgeber AG", txs[0].CounterpartyName);
         Assert.Equal(3000.00m, txs[0].Amount);
     }
+
+    [Fact]
+    public void Parse_EingangWithoutDecimalPart_DoesNotShrinkByThousand()
+    {
+        // DKB sometimes omits the cents entirely, using "." purely as a thousands
+        // separator (e.g. "1.000" meaning 1000,00 EUR, not 1,00 EUR).
+        string csv = Header + "\n" +
+            "\"02.12.2025\";\"02.12.2025\";\"Gebucht\";\"Luca Lenz\";\"\";" +
+            "\"Kuss zurueck\";\"Eingang\";\"DEXXXX\";\"1.000\";\"\";\"\";\"\"";
+        string path = CreateTempCsv(csv);
+
+        var txs = _parser.Parse(path);
+
+        Assert.Single(txs);
+        Assert.Equal(1000m, txs[0].Amount);
+    }
+
+    [Fact]
+    public void Parse_AusgangWithoutDecimalPart_DoesNotShrinkByThousand()
+    {
+        string csv = Header + "\n" +
+            "\"03.03.2025\";\"03.03.2025\";\"Gebucht\";\"\";\"ANNE-CHRISTIN WAGNER\";" +
+            "\"Miete Dr.-von-Schmitt-Strasse\";\"Ausgang\";\"DEXXXXX\";\"-1.300\";\"\";\"\";\"\"";
+        string path = CreateTempCsv(csv);
+
+        var txs = _parser.Parse(path);
+
+        Assert.Single(txs);
+        Assert.Equal(-1300m, txs[0].Amount);
+    }
 }

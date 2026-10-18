@@ -150,7 +150,9 @@ public abstract class BankCsvParserBase : IBankCsvParser
 
     /// <summary>
     /// Parses amounts regardless of format: "1.234,56" (DE) just as well as "1,234.56" or "1234.56" (EN).
-    /// Rule: the rightmost ',' or '.' is the decimal separator.
+    /// Rule: the rightmost ',' or '.' is the decimal separator - unless exactly 3 digits follow it,
+    /// which can't be cents (currency has at most 2 decimal digits) and means it's actually a
+    /// thousands separator, e.g. DKB's decimal-less "1.000" (1000, not 1.000).
     /// </summary>
     protected decimal ParseAmount(string? raw)
     {
@@ -162,10 +164,17 @@ public abstract class BankCsvParserBase : IBankCsvParser
         int lastDot   = s.LastIndexOf('.');
         char decimalSep = lastComma > lastDot ? ',' : (lastDot > lastComma ? '.' : '\0');
 
+        if (decimalSep != '\0' && s.Length - s.LastIndexOf(decimalSep) - 1 == 3)
+            decimalSep = '\0';
+
         if (decimalSep != '\0')
         {
             char thousandSep = decimalSep == ',' ? '.' : ',';
             s = s.Replace(thousandSep.ToString(), "").Replace(decimalSep, '.');
+        }
+        else
+        {
+            s = s.Replace(",", "").Replace(".", "");
         }
 
         return decimal.TryParse(s, NumberStyles.Number | NumberStyles.AllowLeadingSign,
