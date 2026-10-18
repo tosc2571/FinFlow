@@ -132,6 +132,7 @@ export interface PatternTestResult {
 export interface ReclassifyResult {
   reclassified: number;
   skippedManualOverride: number;
+  skippedInternalTransfer: number;
 }
 
 export interface TransactionFilter {

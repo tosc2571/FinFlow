@@ -50,7 +50,7 @@ public sealed class RuleSet
 
 public record PatternTestMatch(int TransactionId, DateOnly? BookingDate, string? CounterpartyName, string? Purpose, decimal Amount);
 public record PatternTestResult(int MatchCount, List<PatternTestMatch> Sample);
-public record ReclassifyResult(int Reclassified, int SkippedManualOverride);
+public record ReclassifyResult(int Reclassified, int SkippedManualOverride, int SkippedInternalTransfer);
 
 public class ClassificationService(AppDbContext db)
 {
@@ -64,22 +64,27 @@ public class ClassificationService(AppDbContext db)
                 new RuleSet.Match(r.Id, r.Pattern, r.CategoryId, MapStatus(r.Status))))]);
 
     /// <summary>
-    /// Re-runs classification over all transactions except manual overrides —
-    /// those survive re-classification by design (see the data-model plan).
+    /// Re-runs classification over all transactions except manual overrides and internal
+    /// transfers — both survive re-classification by design (see the data-model plan).
+    /// InternalTransfer is hand-set just like ManualOverride (by the status dropdown, or by
+    /// TransferDetectionService's IBAN matching, neither of which goes through a
+    /// ClassificationRule), so a blanket reclassify must not silently revert it.
     /// </summary>
     public ReclassifyResult ReclassifyAll()
     {
         RuleSet rules = LoadRuleSet();
-        int skipped = db.Transactions.Count(t => t.ClassificationStatus == ClassificationStatus.ManualOverride);
+        int skippedManualOverride = db.Transactions.Count(t => t.ClassificationStatus == ClassificationStatus.ManualOverride);
+        int skippedInternalTransfer = db.Transactions.Count(t => t.ClassificationStatus == ClassificationStatus.InternalTransfer);
         List<Transaction> candidates = [.. db.Transactions
-            .Where(t => t.ClassificationStatus != ClassificationStatus.ManualOverride)];
+            .Where(t => t.ClassificationStatus != ClassificationStatus.ManualOverride
+                     && t.ClassificationStatus != ClassificationStatus.InternalTransfer)];
         foreach (Transaction t in candidates)
         {
             (t.CategoryId, t.ClassificationStatus) = rules.Classify(t.CounterpartyName, t.Purpose);
             t.UpdatedAt = DateTime.UtcNow;
         }
         db.SaveChanges();
-        return new ReclassifyResult(candidates.Count, skipped);
+        return new ReclassifyResult(candidates.Count, skippedManualOverride, skippedInternalTransfer);
     }
 
     /// <summary>Dry-runs a pattern against existing transactions without changing anything.</summary>

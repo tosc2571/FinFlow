@@ -80,7 +80,7 @@
 <div class="toolbar">
   <button (click)="reclassify()">Re-run classification</button>
   @if (reclassifyResult(); as r) {
-    <span class="muted">{{ r.reclassified }} reclassified, {{ r.skippedManualOverride }} manual override(s) kept.</span>
+    <span class="muted">{{ r.reclassified }} reclassified, {{ r.skippedManualOverride }} manual override(s) and {{ r.skippedInternalTransfer }} internal transfer(s) kept.</span>
   }
   <span style="flex: 1"></span>
   <label>Filter <input type="text" [(ngModel)]="filterText" placeholder="pattern or category" /></label>

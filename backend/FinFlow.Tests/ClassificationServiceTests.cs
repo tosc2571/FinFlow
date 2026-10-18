@@ -69,6 +69,30 @@ public class ClassificationServiceTests : IDisposable
     }
 
     [Fact]
+    public void ReclassifyAll_PreservesInternalTransfer_EvenWithoutAMatchingRule()
+    {
+        // Real-world case (#83): a transaction marked "internal transfer between internal
+        // accounts" by hand (status dropdown) or by TransferDetectionService's IBAN matching —
+        // neither goes through a ClassificationRule, so there's nothing for the rule set to
+        // re-match against. "Re-run classification" must not revert it to NeedsReview.
+        using AppDbContext ctx = CreateContext();
+        ImportBatch batch = new() { SourceFileName = "seed.csv", DetectedBank = "dkb", Status = ImportStatus.Completed };
+        ctx.ImportBatches.Add(batch);
+        ctx.SaveChanges();
+        Transaction manuallyMarked = Tx(batch, "Luca Lenz", "Kuss zurueck", ClassificationStatus.InternalTransfer);
+        ctx.Transactions.Add(manuallyMarked);
+        ctx.SaveChanges();
+
+        ReclassifyResult result = new ClassificationService(ctx).ReclassifyAll();
+
+        Assert.Equal(0, result.Reclassified);
+        Assert.Equal(1, result.SkippedInternalTransfer);
+        Transaction kept = ctx.Transactions.Single(t => t.Id == manuallyMarked.Id);
+        Assert.Equal(ClassificationStatus.InternalTransfer, kept.ClassificationStatus);
+        Assert.Null(kept.CategoryId);
+    }
+
+    [Fact]
     public void TestPattern_CountsMatchesAndReturnsSample()
     {
         using AppDbContext ctx = CreateContext();
