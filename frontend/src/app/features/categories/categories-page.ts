@@ -27,7 +27,7 @@ export class CategoriesPage {
   protected name = '';
   protected parentCategoryId: number | '' = '';
   protected isIncome = false;
-  /** Export ordering only (XlsxExporter) — lower value sorts first. In-app lists/dropdowns stay
+  /** Export ordering only (XlsxExporter) — higher value sorts first. In-app lists/dropdowns stay
    * alphabetical (#56); this only controls the exported XLSX's sheet/section/row order. */
   protected priority = 0;
 
