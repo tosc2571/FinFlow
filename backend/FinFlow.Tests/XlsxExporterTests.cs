@@ -169,7 +169,7 @@ public class XlsxExporterTests : IDisposable
     [Fact]
     public void TopCategorySheets_OrderedByPriority_NotAlphabetically()
     {
-        // "Zoo" would come after "Alimony" alphabetically, but priority 1 puts it first.
+        // "Zoo" would come before "Alimony" alphabetically, but priority 5 (higher) puts Alimony first.
         List<ClassifiedTransaction> classified =
         [
             new(Tx("Landlord", -1000m), "Alimony", "Alimony", "auto", CategoryPriority: 5, TopCategoryPriority: 5),
@@ -181,8 +181,8 @@ public class XlsxExporterTests : IDisposable
         using XLWorkbook wb = new(_path);
         // Overview is forced to position 1 regardless of priority, so the next tab is the
         // highest-priority top-category sheet.
-        Assert.Equal("Zoo", wb.Worksheets.ElementAt(1).Name);
-        Assert.Equal("Alimony", wb.Worksheets.ElementAt(2).Name);
+        Assert.Equal("Alimony", wb.Worksheets.ElementAt(1).Name);
+        Assert.Equal("Zoo", wb.Worksheets.ElementAt(2).Name);
     }
 
     [Fact]
@@ -220,9 +220,9 @@ public class XlsxExporterTests : IDisposable
         List<string> sectionTitles = [.. ws.Column(1).CellsUsed()
             .Where(c => c.Style.Font.FontSize == 13)
             .Select(c => c.GetString())];
-        // Rent (priority 1) before Utilities (priority 5); "Other" (transactions directly on the
-        // parent) always last regardless of its own priority.
-        Assert.Equal(["Rent", "Utilities", "Other"], sectionTitles);
+        // Utilities (priority 5, higher) before Rent (priority 1); "Other" (transactions
+        // directly on the parent) always last regardless of its own priority.
+        Assert.Equal(["Utilities", "Rent", "Other"], sectionTitles);
     }
 
     [Fact]
@@ -238,9 +238,9 @@ public class XlsxExporterTests : IDisposable
 
         using XLWorkbook wb = new(_path);
         IXLWorksheet overview = wb.Worksheet("Overview");
-        // Row 1 is the header — "Alimony" (priority 1) must come before "Zoo" (priority 5).
-        Assert.Equal("Alimony", overview.Cell(2, 1).GetString());
-        Assert.Equal("Zoo", overview.Cell(3, 1).GetString());
+        // Row 1 is the header — "Zoo" (priority 5, higher) must come before "Alimony" (priority 1).
+        Assert.Equal("Zoo", overview.Cell(2, 1).GetString());
+        Assert.Equal("Alimony", overview.Cell(3, 1).GetString());
     }
 
     public void Dispose()
