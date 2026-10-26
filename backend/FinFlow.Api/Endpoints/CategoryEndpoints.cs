@@ -6,9 +6,9 @@ namespace FinFlow.Api.Endpoints;
 
 public static class CategoryEndpoints
 {
-    public record CategoryRequest(string Name, int? ParentCategoryId, bool IsIncome, int SortOrder);
-    public record CategoryDto(int Id, string Name, int? ParentCategoryId, bool IsIncome, int SortOrder, int TransactionCount);
-    public record CategoryTreeNode(int Id, string Name, bool IsIncome, int SortOrder, List<CategoryTreeNode> Children);
+    public record CategoryRequest(string Name, int? ParentCategoryId, bool IsIncome, int Priority);
+    public record CategoryDto(int Id, string Name, int? ParentCategoryId, bool IsIncome, int Priority, int TransactionCount);
+    public record CategoryTreeNode(int Id, string Name, bool IsIncome, int Priority, List<CategoryTreeNode> Children);
 
     public static void MapCategoryEndpoints(this WebApplication app)
     {
@@ -17,7 +17,7 @@ public static class CategoryEndpoints
         group.MapGet("/", (AppDbContext db) =>
             db.Categories.AsNoTracking()
                 .OrderBy(c => c.Name)
-                .Select(c => new CategoryDto(c.Id, c.Name, c.ParentCategoryId, c.IsIncome, c.SortOrder, c.Transactions.Count))
+                .Select(c => new CategoryDto(c.Id, c.Name, c.ParentCategoryId, c.IsIncome, c.Priority, c.Transactions.Count))
                 .ToList());
 
         group.MapGet("/tree", (AppDbContext db) =>
@@ -36,13 +36,13 @@ public static class CategoryEndpoints
                 Name = req.Name.Trim(),
                 ParentCategoryId = req.ParentCategoryId,
                 IsIncome = req.IsIncome,
-                SortOrder = req.SortOrder,
+                Priority = req.Priority,
             };
             db.Categories.Add(category);
             await db.SaveChangesAsync();
             // A brand-new category can't have any transactions yet.
             return Results.Created($"/api/categories/{category.Id}",
-                new CategoryDto(category.Id, category.Name, category.ParentCategoryId, category.IsIncome, category.SortOrder, TransactionCount: 0));
+                new CategoryDto(category.Id, category.Name, category.ParentCategoryId, category.IsIncome, category.Priority, TransactionCount: 0));
         });
 
         group.MapPut("/{id:int}", async (int id, CategoryRequest req, AppDbContext db) =>
@@ -55,10 +55,10 @@ public static class CategoryEndpoints
             category.Name = req.Name.Trim();
             category.ParentCategoryId = req.ParentCategoryId;
             category.IsIncome = req.IsIncome;
-            category.SortOrder = req.SortOrder;
+            category.Priority = req.Priority;
             await db.SaveChangesAsync();
             int transactionCount = await db.Transactions.CountAsync(t => t.CategoryId == category.Id);
-            return Results.Ok(new CategoryDto(category.Id, category.Name, category.ParentCategoryId, category.IsIncome, category.SortOrder, transactionCount));
+            return Results.Ok(new CategoryDto(category.Id, category.Name, category.ParentCategoryId, category.IsIncome, category.Priority, transactionCount));
         });
 
         group.MapDelete("/{id:int}", async (int id, AppDbContext db) =>
@@ -86,8 +86,8 @@ public static class CategoryEndpoints
 
     private static List<CategoryTreeNode> BuildTree(List<Category> all, int? parentId) =>
         [.. all.Where(c => c.ParentCategoryId == parentId)
-            .OrderBy(c => c.SortOrder).ThenBy(c => c.Name)
-            .Select(c => new CategoryTreeNode(c.Id, c.Name, c.IsIncome, c.SortOrder, BuildTree(all, c.Id)))];
+            .OrderBy(c => c.Priority).ThenBy(c => c.Name)
+            .Select(c => new CategoryTreeNode(c.Id, c.Name, c.IsIncome, c.Priority, BuildTree(all, c.Id)))];
 
     internal record CategoryValidationError(int StatusCode, string Message)
     {

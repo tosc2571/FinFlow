@@ -42,7 +42,9 @@ export interface CategoryDto {
   name: string;
   parentCategoryId: number | null;
   isIncome: boolean;
-  sortOrder: number;
+  /** Export ordering only (XlsxExporter) — lower value sorts first, ties break alphabetically.
+   * Does not affect in-app ordering (category tree/dropdowns are always alphabetical). */
+  priority: number;
   transactionCount: number;
 }
 

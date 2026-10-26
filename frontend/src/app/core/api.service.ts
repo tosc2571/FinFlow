@@ -31,7 +31,7 @@ export interface CategoryRequest {
   name: string;
   parentCategoryId: number | null;
   isIncome: boolean;
-  sortOrder: number;
+  priority: number;
 }
 
 export interface RuleRequest {

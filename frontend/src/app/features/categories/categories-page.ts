@@ -27,6 +27,9 @@ export class CategoriesPage {
   protected name = '';
   protected parentCategoryId: number | '' = '';
   protected isIncome = false;
+  /** Export ordering only (XlsxExporter) — lower value sorts first. In-app lists/dropdowns stay
+   * alphabetical (#56); this only controls the exported XLSX's sheet/section/row order. */
+  protected priority = 0;
 
   /** Text filter (#53) — matches against the category name. */
   protected filterText = '';
@@ -105,6 +108,7 @@ export class CategoriesPage {
     this.name = category.name;
     this.parentCategoryId = category.parentCategoryId ?? '';
     this.isIncome = category.isIncome;
+    this.priority = category.priority;
   }
 
   protected resetForm(): void {
@@ -112,6 +116,7 @@ export class CategoriesPage {
     this.name = '';
     this.parentCategoryId = '';
     this.isIncome = false;
+    this.priority = 0;
   }
 
   protected save(): void {
@@ -120,8 +125,7 @@ export class CategoriesPage {
       name: this.name,
       parentCategoryId: this.parentCategoryId === '' ? null : this.parentCategoryId,
       isIncome: this.isIncome,
-      // No longer user-editable (#56) — ordering is alphabetical now, within each tree level.
-      sortOrder: 0,
+      priority: this.priority,
     };
     const call =
       this.editingId === null

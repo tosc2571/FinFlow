@@ -58,7 +58,7 @@ namespace FinFlow.Api.Migrations
                     b.Property<int?>("ParentCategoryId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("SortOrder")
+                    b.Property<int>("Priority")
                         .HasColumnType("INTEGER");
 
                     b.HasKey("Id");

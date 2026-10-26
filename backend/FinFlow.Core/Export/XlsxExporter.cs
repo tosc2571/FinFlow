@@ -17,7 +17,7 @@ public static class XlsxExporter
 
         List<ClassifiedTransaction> review = classified
             .Where(c => c.Status == "review")
-            .OrderBy(c => c.Category).ThenBy(c => c.Transaction.BookingDate)
+            .OrderBy(c => c.CategoryPriority).ThenBy(c => c.Category).ThenBy(c => c.Transaction.BookingDate)
             .ToList();
         List<ClassifiedTransaction> ignored = classified.Where(c => c.Status == "ignored").ToList();
 
@@ -26,7 +26,7 @@ public static class XlsxExporter
         foreach (IGrouping<string, ClassifiedTransaction> topGroup in classified
             .Where(c => c.Status != "ignored")
             .GroupBy(c => c.TopCategory)
-            .OrderBy(g => g.Key))
+            .OrderBy(g => g.First().TopCategoryPriority).ThenBy(g => g.Key))
         {
             topSheets[topGroup.Key] = AddTopCategorySheet(wb, topGroup.Key, topGroup.ToList());
         }
@@ -59,7 +59,8 @@ public static class XlsxExporter
         foreach (IGrouping<(string TopCategory, string Category), ClassifiedTransaction> g in all
             .Where(c => c.Status != "ignored")
             .GroupBy(c => (c.TopCategory, c.Category))
-            .OrderBy(g => g.Key.TopCategory).ThenBy(g => g.Key.Category))
+            .OrderBy(g => g.First().TopCategoryPriority).ThenBy(g => g.Key.TopCategory)
+            .ThenBy(g => g.First().CategoryPriority).ThenBy(g => g.Key.Category))
         {
             List<ClassifiedTransaction> autoItems   = g.Where(c => c.Status == "auto").ToList();
             List<ClassifiedTransaction> reviewItems = g.Where(c => c.Status == "review").ToList();
@@ -117,7 +118,7 @@ public static class XlsxExporter
         List<IGrouping<string, ClassifiedTransaction>> sections = [.. items
             .GroupBy(c => c.Category)
             .OrderBy(g => g.Key == topCategory ? 1 : 0) // "Other" (directly on the parent) last
-            .ThenBy(g => g.Key)];
+            .ThenBy(g => g.First().CategoryPriority).ThenBy(g => g.Key)];
 
         bool isSingleSection = sections.Count == 1 && sections[0].Key == topCategory;
         int row = 1;
