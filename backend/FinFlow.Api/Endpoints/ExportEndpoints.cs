@@ -58,7 +58,9 @@ public static class ExportEndpoints
             ToLegacy(t),
             t.Category?.Name ?? "Other",
             t.Category?.ParentCategory?.Name ?? t.Category?.Name ?? "Other",
-            ToExportStatus(t.ClassificationStatus)))];
+            ToExportStatus(t.ClassificationStatus),
+            t.Category?.Priority ?? 0,
+            t.Category?.ParentCategory?.Priority ?? t.Category?.Priority ?? 0))];
     }
 
     private static LegacyTransaction ToLegacy(Entities.Transaction t) => new()

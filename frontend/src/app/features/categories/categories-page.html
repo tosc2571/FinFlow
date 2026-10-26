@@ -14,6 +14,9 @@
       </select>
     </label>
     <label><input type="checkbox" [(ngModel)]="isIncome" /> income</label>
+    <label title="Export order only — lower value sorts first in the exported XLSX; ties break alphabetically. Does not affect in-app lists.">
+      Priority <input type="number" [(ngModel)]="priority" style="width: 4.5rem" />
+    </label>
     <button class="primary" [disabled]="!name.trim()" (click)="save()">
       {{ editingId === null ? 'Create' : 'Save' }}
     </button>
@@ -46,6 +49,7 @@
         {{ c.name }}
       }
     </td>
+    <td class="amount" title="Export order only — lower value sorts first in the exported XLSX.">{{ c.priority }}</td>
     <td>{{ c.isIncome ? '✓' : '—' }}</td>
     <td class="amount">
       @if (c.transactionCount > 0) {
@@ -80,6 +84,7 @@
   <thead>
     <tr>
       <th>Name</th>
+      <th class="amount">Priority</th>
       <th>Income</th>
       <th class="amount">Transactions</th>
       <th>Rules</th>

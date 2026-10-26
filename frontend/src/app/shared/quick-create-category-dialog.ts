@@ -50,7 +50,7 @@ export class QuickCreateCategoryDialog {
       name: this.name,
       parentCategoryId: this.parentCategoryId === '' ? null : this.parentCategoryId,
       isIncome: this.isIncome,
-      sortOrder: 0,
+      priority: 0,
     };
     this.categoriesService.create(req).subscribe((category) => {
       this.visible.set(false);

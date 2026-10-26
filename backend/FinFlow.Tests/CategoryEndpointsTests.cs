@@ -23,7 +23,7 @@ public class CategoryEndpointsTests : IDisposable
 
     private static int AddCategory(AppDbContext ctx, string name, int? parentId = null)
     {
-        Category category = new() { Name = name, ParentCategoryId = parentId, IsIncome = false, SortOrder = 0 };
+        Category category = new() { Name = name, ParentCategoryId = parentId, IsIncome = false, Priority = 0 };
         ctx.Categories.Add(category);
         ctx.SaveChanges();
         return category.Id;

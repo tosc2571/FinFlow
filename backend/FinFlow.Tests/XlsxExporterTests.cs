@@ -166,6 +166,83 @@ public class XlsxExporterTests : IDisposable
         Assert.Equal("Overview", wb.Worksheets.First().Name);
     }
 
+    [Fact]
+    public void TopCategorySheets_OrderedByPriority_NotAlphabetically()
+    {
+        // "Zoo" would come after "Alimony" alphabetically, but priority 1 puts it first.
+        List<ClassifiedTransaction> classified =
+        [
+            new(Tx("Landlord", -1000m), "Alimony", "Alimony", "auto", CategoryPriority: 5, TopCategoryPriority: 5),
+            new(Tx("Zoo Inc", -50m), "Zoo", "Zoo", "auto", CategoryPriority: 1, TopCategoryPriority: 1),
+        ];
+
+        XlsxExporter.Export(classified, _path);
+
+        using XLWorkbook wb = new(_path);
+        // Overview is forced to position 1 regardless of priority, so the next tab is the
+        // highest-priority top-category sheet.
+        Assert.Equal("Zoo", wb.Worksheets.ElementAt(1).Name);
+        Assert.Equal("Alimony", wb.Worksheets.ElementAt(2).Name);
+    }
+
+    [Fact]
+    public void TopCategorySheets_SamePriority_FallBackToAlphabetical()
+    {
+        List<ClassifiedTransaction> classified =
+        [
+            new(Tx("Landlord", -1000m), "Zoo", "Zoo", "auto"),
+            new(Tx("Employer", 3000m), "Alimony", "Alimony", "auto"),
+        ];
+
+        XlsxExporter.Export(classified, _path);
+
+        using XLWorkbook wb = new(_path);
+        Assert.Equal("Alimony", wb.Worksheets.ElementAt(1).Name);
+        Assert.Equal("Zoo", wb.Worksheets.ElementAt(2).Name);
+    }
+
+    [Fact]
+    public void Sections_OrderedByPriority_WithinASheet_OtherStillLast()
+    {
+        List<ClassifiedTransaction> classified =
+        [
+            new(Tx("Direct on Housing", -50m), "Housing", "Housing", "auto", CategoryPriority: 1, TopCategoryPriority: 1),
+            new(Tx("Utility Co", -150m), "Utilities", "Housing", "auto", CategoryPriority: 5, TopCategoryPriority: 1),
+            new(Tx("Landlord", -1000m), "Rent", "Housing", "auto", CategoryPriority: 1, TopCategoryPriority: 1),
+        ];
+
+        XlsxExporter.Export(classified, _path);
+
+        using XLWorkbook wb = new(_path);
+        IXLWorksheet ws = wb.Worksheet("Housing");
+        // Section-title cells are the only column-1 cells set to font size 13 (WriteTransactionSection);
+        // other bold cells in that column (header row, total row) use the default size.
+        List<string> sectionTitles = [.. ws.Column(1).CellsUsed()
+            .Where(c => c.Style.Font.FontSize == 13)
+            .Select(c => c.GetString())];
+        // Rent (priority 1) before Utilities (priority 5); "Other" (transactions directly on the
+        // parent) always last regardless of its own priority.
+        Assert.Equal(["Rent", "Utilities", "Other"], sectionTitles);
+    }
+
+    [Fact]
+    public void Overview_RowsOrderedByPriority()
+    {
+        List<ClassifiedTransaction> classified =
+        [
+            new(Tx("Landlord", -1000m), "Zoo", "Zoo", "auto", CategoryPriority: 5, TopCategoryPriority: 5),
+            new(Tx("Employer", 3000m), "Alimony", "Alimony", "auto", CategoryPriority: 1, TopCategoryPriority: 1),
+        ];
+
+        XlsxExporter.Export(classified, _path);
+
+        using XLWorkbook wb = new(_path);
+        IXLWorksheet overview = wb.Worksheet("Overview");
+        // Row 1 is the header — "Alimony" (priority 1) must come before "Zoo" (priority 5).
+        Assert.Equal("Alimony", overview.Cell(2, 1).GetString());
+        Assert.Equal("Zoo", overview.Cell(3, 1).GetString());
+    }
+
     public void Dispose()
     {
         if (File.Exists(_path)) File.Delete(_path);

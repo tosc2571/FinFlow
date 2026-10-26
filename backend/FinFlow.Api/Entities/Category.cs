@@ -7,7 +7,11 @@ public class Category
     public int? ParentCategoryId { get; set; }
     public Category? ParentCategory { get; set; }
     public bool IsIncome { get; set; }
-    public int SortOrder { get; set; }
+
+    /// <summary>Controls export ordering (XlsxExporter) only — lower value sorts first, ties break
+    /// alphabetically by name. Does not affect in-app ordering (category tree/dropdowns are
+    /// always alphabetical, see #56).</summary>
+    public int Priority { get; set; }
 
     public List<Category> Children { get; set; } = [];
     public List<Transaction> Transactions { get; set; } = [];
