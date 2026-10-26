@@ -43,24 +43,47 @@ public static class ExportEndpoints
         });
     }
 
-    private static List<ClassifiedTransaction> LoadClassified(AppDbContext db, TransactionFilterParams filter)
+    internal static List<ClassifiedTransaction> LoadClassified(AppDbContext db, TransactionFilterParams filter)
     {
         // Materialize first, then project — ToLegacy/ToCliStatus are arbitrary C# methods EF
         // Core 8 can't translate to SQL; chaining .Select() onto the still-IQueryable pipeline
         // throws at runtime instead of falling back to client evaluation (see DashboardService
         // for the same pitfall).
         List<Entities.Transaction> transactions = [.. TransactionFilters.Apply(
-                db.Transactions.AsNoTracking().Include(t => t.Category).ThenInclude(c => c!.ParentCategory),
+                db.Transactions.AsNoTracking().Include(t => t.Category),
                 filter)
             .OrderBy(t => t.BookingDate).ThenBy(t => t.Id)];
 
-        return [.. transactions.Select(t => new ClassifiedTransaction(
-            ToLegacy(t),
-            t.Category?.Name ?? "Other",
-            t.Category?.ParentCategory?.Name ?? t.Category?.Name ?? "Other",
-            ToExportStatus(t.ClassificationStatus),
-            t.Category?.Priority ?? 0,
-            t.Category?.ParentCategory?.Priority ?? t.Category?.Priority ?? 0))];
+        // Category nesting is arbitrarily deep (#70/#72) — load every category once and walk
+        // each transaction's own category up to its true root in memory, rather than a
+        // fixed-depth .ThenInclude chain that only ever reaches one ancestor.
+        Dictionary<int, Entities.Category> categoriesById = db.Categories.AsNoTracking().ToDictionary(c => c.Id);
+
+        return [.. transactions.Select(t =>
+        {
+            Entities.Category? topCategory = ResolveTopCategory(t.Category, categoriesById);
+            return new ClassifiedTransaction(
+                ToLegacy(t),
+                t.Category?.Name ?? "Other",
+                topCategory?.Name ?? "Other",
+                ToExportStatus(t.ClassificationStatus),
+                t.Category?.Priority ?? 0,
+                topCategory?.Priority ?? 0);
+        })];
+    }
+
+    /// <summary>
+    /// Walks a category's parent chain up to its root (ParentCategoryId == null), however deep
+    /// the nesting goes — a category directly on the root is its own result. The depth cap is
+    /// only a defensive backstop against a corrupted cyclic parent chain (the API's own
+    /// validation already rejects creating one), not a real limit.
+    /// </summary>
+    private static Entities.Category? ResolveTopCategory(Entities.Category? category, Dictionary<int, Entities.Category> categoriesById)
+    {
+        Entities.Category? current = category;
+        for (int depth = 0; current?.ParentCategoryId is { } parentId && depth < 50; depth++)
+            current = categoriesById.GetValueOrDefault(parentId);
+        return current;
     }
 
     private static LegacyTransaction ToLegacy(Entities.Transaction t) => new()
